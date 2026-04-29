@@ -1,117 +1,127 @@
 {% extends "base.html" %}
 
-{% block title %}Model Metrics - Game Success Predictor{% endblock %}
+{% block title %}Model Metrics — SAGE{% endblock %}
 
 {% block content %}
+<header class="page-header">
+    <span class="eyebrow">Performance</span>
+    <h1>Model metrics</h1>
+    <p class="lede">Evaluation results of the stacked ensemble and its base learners on the held-out test set, plus the dataset and class distribution it was trained on.</p>
+</header>
+
 <div class="page-container">
-    <h1>📊 Model Performance Metrics</h1>
-    <p class="page-subtitle">Evaluation results of the ensemble learning model</p>
 
-    <!-- Performance Metrics Table -->
+    <!-- Headline ensemble metrics -->
     <div class="card">
-        <h2>Performance Comparison</h2>
-        <table class="metrics-table">
+        <h2>Ensemble (stacked) — headline</h2>
+        <div class="metrics-grid" style="margin-top:6px">
+            <div class="metric-tile">
+                <div class="label">Weighted F1</div>
+                <div class="value">{{ "%.4f"|format(metrics.ensemble.weighted_f1) }}</div>
+            </div>
+            <div class="metric-tile">
+                <div class="label">Macro F1</div>
+                <div class="value">{{ "%.4f"|format(metrics.ensemble.macro_f1) }}</div>
+            </div>
+            <div class="metric-tile">
+                <div class="label">Accuracy</div>
+                <div class="value">{{ "%.2f"|format(metrics.ensemble.accuracy * 100) }}%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Per-model comparison -->
+    <div class="card">
+        <h2>Per-model comparison</h2>
+        <div style="overflow-x:auto;margin-top:8px">
+        <table class="metrics-table" style="width:100%;border-collapse:collapse;font-size:14px">
             <thead>
-                <tr>
-                    <th>Model</th>
-                    <th>Weighted F1</th>
-                    <th>Macro F1</th>
-                    <th>Accuracy</th>
+                <tr style="text-align:left;border-bottom:1px solid var(--border)">
+                    <th style="padding:10px 12px">Model</th>
+                    <th style="padding:10px 12px">Weighted F1</th>
+                    <th style="padding:10px 12px">Macro F1</th>
+                    <th style="padding:10px 12px">Accuracy</th>
                 </tr>
             </thead>
             <tbody>
-                <tr class="highlight">
-                    <td><strong>🏆 Ensemble (Stacked)</strong></td>
-                    <td>{{ "%.4f"|format(metrics.ensemble.weighted_f1) }}</td>
-                    <td>{{ "%.4f"|format(metrics.ensemble.macro_f1) }}</td>
-                    <td>{{ "%.4f"|format(metrics.ensemble.accuracy) }}</td>
-                </tr>
-                <tr>
-                    <td>Random Forest</td>
-                    <td>{{ "%.4f"|format(metrics.random_forest.weighted_f1) }}</td>
-                    <td>{{ "%.4f"|format(metrics.random_forest.macro_f1) }}</td>
-                    <td>{{ "%.4f"|format(metrics.random_forest.accuracy) }}</td>
-                </tr>
-                <tr>
-                    <td>Gradient Boosting</td>
-                    <td>{{ "%.4f"|format(metrics.gradient_boosting.weighted_f1) }}</td>
-                    <td>{{ "%.4f"|format(metrics.gradient_boosting.macro_f1) }}</td>
-                    <td>{{ "%.4f"|format(metrics.gradient_boosting.accuracy) }}</td>
-                </tr>
-                <tr>
-                    <td>XGBoost</td>
-                    <td>{{ "%.4f"|format(metrics.xgboost.weighted_f1) }}</td>
-                    <td>{{ "%.4f"|format(metrics.xgboost.macro_f1) }}</td>
-                    <td>{{ "%.4f"|format(metrics.xgboost.accuracy) }}</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Dataset Information -->
-    <div class="card">
-        <h2>Dataset Information</h2>
-        <table class="info-table">
-            <tr>
-                <th>Total Games</th>
-                <td>{{ "{:,}".format(dataset_info.total_games) }}</td>
-            </tr>
-            <tr>
-                <th>Number of Features</th>
-                <td>{{ dataset_info.n_features }} (pre-launch only)</td>
-            </tr>
-            <tr>
-                <th>Number of Classes</th>
-                <td>{{ dataset_info.n_classes }} (ordinal owner tiers)</td>
-            </tr>
-            <tr>
-                <th>Train/Test Split</th>
-                <td>{{ dataset_info.train_test_split }}</td>
-            </tr>
-        </table>
-    </div>
-
-    <!-- Class Distribution -->
-    <div class="card">
-        <h2>Class Distribution</h2>
-        <table class="metrics-table">
-            <thead>
-                <tr>
-                    <th>Class</th>
-                    <th>Owner Range</th>
-                    <th>Sample Count</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for class_id, info in class_ranges.items() %}
-                <tr>
-                    <td>Class {{ class_id }}</td>
-                    <td>{{ info.label }} — {{ info.tier }}</td>
-                    <td>{{ "{:,}".format(dataset_info.class_distribution["Class " ~ class_id ~ " (" ~ info.label ~ ")"]) }}</td>
+                {% for key, label in [('ensemble','Ensemble (Stacked) ★'),('random_forest','Random Forest'),('gradient_boosting','Gradient Boosting'),('xgboost','XGBoost')] %}
+                {% set m = metrics[key] %}
+                <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:10px 12px;{% if key == 'ensemble' %}color:var(--sage-600);font-weight:600{% endif %}">{{ label }}</td>
+                    <td style="padding:10px 12px;font-family:var(--font-mono)">{{ "%.4f"|format(m.weighted_f1) }}</td>
+                    <td style="padding:10px 12px;font-family:var(--font-mono)">{{ "%.4f"|format(m.macro_f1) }}</td>
+                    <td style="padding:10px 12px;font-family:var(--font-mono)">{{ "%.2f"|format(m.accuracy * 100) }}%</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     </div>
 
-    <!-- Metrics Explanation -->
+    <!-- Dataset -->
     <div class="card">
-        <h2>Metrics Explanation</h2>
-        <dl class="metrics-explanation">
-            <dt>Weighted F1 Score</dt>
-            <dd>Harmonic mean of precision and recall, weighted by class support. Ranges from 0 to 1 (higher is better).</dd>
-            
-            <dt>Macro F1 Score</dt>
-            <dd>Unweighted average F1 across all classes. Useful for evaluating performance on minority classes.</dd>
-            
-            <dt>Accuracy</dt>
-            <dd>Percentage of correctly classified games. Simple overall performance metric.</dd>
-        </dl>
+        <h2>Dataset</h2>
+        <div class="metrics-grid" style="margin-top:6px">
+            <div class="metric-tile">
+                <div class="label">Total games</div>
+                <div class="value">{{ "{:,}".format(dataset_info.total_games) }}</div>
+            </div>
+            <div class="metric-tile">
+                <div class="label">Features</div>
+                <div class="value">{{ dataset_info.n_features }}</div>
+            </div>
+            <div class="metric-tile">
+                <div class="label">Classes</div>
+                <div class="value">{{ dataset_info.n_classes }}</div>
+            </div>
+            <div class="metric-tile">
+                <div class="label">Train / Test split</div>
+                <div class="value" style="font-size:20px">{{ dataset_info.train_test_split }}</div>
+            </div>
+        </div>
     </div>
 
-    <!-- Note -->
+    <!-- Class distribution -->
+    <div class="card">
+        <h2>Class distribution</h2>
+        <div style="overflow-x:auto;margin-top:8px">
+        <table class="metrics-table" style="width:100%;border-collapse:collapse;font-size:14px">
+            <thead>
+                <tr style="text-align:left;border-bottom:1px solid var(--border)">
+                    <th style="padding:10px 12px">Class</th>
+                    <th style="padding:10px 12px">Owner range</th>
+                    <th style="padding:10px 12px">Tier</th>
+                    <th style="padding:10px 12px">Samples</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for class_id, info in class_ranges.items() %}
+                {% set count = dataset_info.class_distribution["Class " ~ class_id ~ " (" ~ info.label ~ ")"] %}
+                <tr style="border-bottom:1px solid var(--border)">
+                    <td style="padding:10px 12px;font-family:var(--font-mono);color:var(--sage-600);font-weight:600">{{ class_id }}</td>
+                    <td style="padding:10px 12px">{{ info.label }}</td>
+                    <td style="padding:10px 12px">{{ info.tier }}</td>
+                    <td style="padding:10px 12px;font-family:var(--font-mono)">{{ "{:,}".format(count) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    <!-- Metric definitions -->
+    <div class="card">
+        <h2>Metric definitions</h2>
+        <h3>Weighted F1</h3>
+        <p>Harmonic mean of precision and recall, weighted by class support. Ranges 0–1; higher is better.</p>
+        <h3>Macro F1</h3>
+        <p>Unweighted average F1 across all classes. Useful for evaluating performance on minority classes.</p>
+        <h3>Accuracy</h3>
+        <p>Percentage of correctly classified games. A simple overall performance metric.</p>
+    </div>
+
     <div class="card note">
-        <p><strong>Note:</strong> The ensemble model combines predictions from Random Forest, Gradient Boosting, and XGBoost using a stacked meta-learner (XGBoost Classifier). This approach leverages the strengths of each base model to achieve superior generalization.</p>
+        <strong>About the ensemble.</strong> The stacked model combines Random Forest, Gradient Boosting, and XGBoost via an XGBoost meta-learner — leveraging the complementary strengths of each base model.
     </div>
 </div>
 {% endblock %}

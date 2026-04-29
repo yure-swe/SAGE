@@ -1,295 +1,156 @@
 {% extends "base.html" %}
 
-{% block title %}About - Game Success Predictor{% endblock %}
+{% block title %}About — SAGE{% endblock %}
 
 {% block content %}
-<div class="page-container">
-    <h1>ℹ️ About This Project</h1>
-    <p class="page-subtitle">Ensemble Learning Model for Predicting Digital Game Success</p>
+<header class="page-header">
+    <span class="eyebrow">Thesis project</span>
+    <h1>About SAGE</h1>
+    <p class="lede">An ensemble-learning model for predicting the commercial success of digital games on Steam — using only pre-launch attributes.</p>
+</header>
 
-    <!-- Project Overview -->
+<div class="page-container">
+
     <div class="card">
-        <h2>📚 Project Overview</h2>
-        <p>
-            This system is a thesis project developed at <strong>FEU Institute of Technology</strong> 
-            under the Bachelor of Science in Computer Science with Specialization in Data Science program.
-        </p>
-        <p>
-            The research applies <strong>ensemble learning techniques</strong> (Random Forest, Gradient Boosting, XGBoost) 
-            combined through stacking to predict the commercial success of digital games on the Steam platform 
-            using <strong>pre-launch features only</strong>.
-        </p>
+        <h2>Project overview</h2>
+        <p>This system is a thesis project developed at <strong>FEU Institute of Technology</strong> under the BS Computer Science with Specialization in Data Science program.</p>
+        <p>The research applies <strong>ensemble learning</strong> techniques (Random Forest, Gradient Boosting, XGBoost) combined through stacking to predict the commercial success of digital games on Steam using <strong>pre-launch features only</strong>.</p>
     </div>
 
-    <!-- Research Team -->
     <div class="card">
-        <h2>👥 Research Team</h2>
+        <h2>Research team</h2>
         <ul class="team-list">
             <li>Balajadia, Gabriel Patrick A.</li>
             <li>Casas, Juan Carlo C.</li>
             <li>Estrada, Raphael G.</li>
             <li>Garcia, Aaron Jacob G.</li>
         </ul>
-        <p><strong>Thesis Adviser:</strong> Elisa V. Malasaga</p>
+        <p style="margin-top:14px"><strong>Thesis adviser:</strong> Elisa V. Malasaga</p>
         <p><strong>Department:</strong> Computer Science, FEU Institute of Technology</p>
-        <p><strong>Submission Date:</strong> March 2026</p>
+        <p><strong>Submission:</strong> March 2026</p>
     </div>
 
-    <!-- Methodology -->
     <div class="card">
-        <h2>🔬 Methodology</h2>
-        
-        <h3>Data Source</h3>
-        <p>
-            The model was trained on <strong>10,000 games</strong> collected from Steam Web API and SteamSpy, 
-            focusing exclusively on <strong>pre-launch attributes</strong> (no post-launch reviews or playtime data).
-        </p>
+        <h2>Methodology</h2>
 
-        <h3>Target Variable</h3>
-        <p>
-            Games are classified into <strong>6 ordinal owner tiers</strong> based on estimated total owners:
-        </p>
+        <h3>Data source</h3>
+        <p>Trained on <strong>10,000 games</strong> collected from the Steam Web API and SteamSpy, focusing exclusively on pre-launch attributes (no post-launch reviews or playtime).</p>
+
+        <h3>Target variable</h3>
+        <p>Games are classified into <strong>6 ordinal owner tiers</strong>:</p>
         <ul>
-            <li>Class 0: ≤10K owners (Common Indie)</li>
-            <li>Class 1: 10K–35K owners (Niche)</li>
-            <li>Class 2: 35K–75K owners (Growing)</li>
-            <li>Class 3: 75K–150K owners (Established)</li>
-            <li>Class 4: 150K–350K owners (Popular)</li>
-            <li>Class 5: ≥750K owners (Breakout Hit)</li>
+            <li>Class 0: ≤10K owners — Common Indie</li>
+            <li>Class 1: 10K–35K owners — Niche</li>
+            <li>Class 2: 35K–75K owners — Growing</li>
+            <li>Class 3: 75K–150K owners — Established</li>
+            <li>Class 4: 150K–350K owners — Popular</li>
+            <li>Class 5: ≥750K owners — Breakout Hit</li>
         </ul>
-        <p><em>Note: Classes 5-8 from the original 9-class scheme were merged into Class 5 due to sparse samples.</em></p>
+        <p><em>Note: classes 5–8 from the original 9-class scheme were merged into Class 5 due to sparse samples.</em></p>
 
-        <h3>Ensemble Architecture</h3>
-        <p>
-            The system employs a <strong>stacked ensemble</strong> approach:
-        </p>
+        <h3>Ensemble architecture</h3>
         <ol>
-            <li><strong>Base Models</strong>: Random Forest, Gradient Boosting, XGBoost (trained independently)</li>
-            <li><strong>Meta-Learner</strong>: XGBoost Classifier (combines base model probabilities)</li>
+            <li><strong>Base models:</strong> Random Forest, Gradient Boosting, XGBoost (trained independently)</li>
+            <li><strong>Meta-learner:</strong> XGBoost classifier combining base-model probabilities</li>
         </ol>
-        <p>
-            This two-level architecture leverages the complementary strengths of each algorithm:
-        </p>
         <ul>
-            <li><strong>Random Forest</strong>: Robust feature importance, handles non-linearity</li>
-            <li><strong>Gradient Boosting</strong>: Sequential error correction, reduces bias</li>
-            <li><strong>XGBoost</strong>: Regularization, handles missing data, captures complex patterns</li>
+            <li><strong>Random Forest</strong> — robust feature importance, handles non-linearity</li>
+            <li><strong>Gradient Boosting</strong> — sequential error correction, reduces bias</li>
+            <li><strong>XGBoost</strong> — regularization, handles missing data, captures complex patterns</li>
         </ul>
 
-        <h3>Feature Engineering</h3>
-        <p>
-            From raw Steam data, <strong>48 pre-launch features</strong> were extracted and engineered:
-        </p>
+        <h3>Feature engineering</h3>
+        <p>From raw Steam data, <strong>48 pre-launch features</strong> were extracted and engineered:</p>
         <ul>
-            <li><strong>Raw Features (41)</strong>: Pricing, release month, genre, platform, languages, screenshots, trailers, developer/publisher info, Steam features, tags, DLC</li>
-            <li><strong>Composite Scores (7)</strong>: Store page quality, marketing investment, platform reach, publisher backing, localization, Steam integration, mature content flag</li>
+            <li><strong>Raw (41):</strong> pricing, release month, genre, platform, languages, screenshots, trailers, developer/publisher info, Steam features, tags, DLC</li>
+            <li><strong>Composite (7):</strong> store page quality, marketing investment, platform reach, publisher backing, localization, Steam integration, mature-content flag</li>
         </ul>
 
-        <h3>Evaluation Metrics</h3>
-        <p>Model performance was assessed using:</p>
-        <ul>
-            <li><strong>Weighted F1 Score</strong>: Accounts for class imbalance</li>
-            <li><strong>Macro F1 Score</strong>: Evaluates performance on minority classes</li>
-            <li><strong>Accuracy</strong>: Overall classification correctness</li>
-        </ul>
-        <p>The ensemble achieved:</p>
-        <ul>
-            <li>Weighted F1 = <strong>0.6211</strong></li>
-            <li>Macro F1 = <strong>0.2688</strong></li>
-            <li>Accuracy = <strong>70.85%</strong></li>
-        </ul>
+        <h3>Headline results</h3>
+        <div class="metrics-grid" style="margin-top:8px">
+            <div class="metric-tile"><div class="label">Weighted F1</div><div class="value">0.6211</div></div>
+            <div class="metric-tile"><div class="label">Macro F1</div><div class="value">0.2688</div></div>
+            <div class="metric-tile"><div class="label">Accuracy</div><div class="value">70.85%</div></div>
+        </div>
     </div>
 
-    <!-- SHAP Interpretability -->
     <div class="card">
-        <h2>📊 Model Interpretability (SHAP Analysis)</h2>
-        <p>
-            SHAP (SHapley Additive exPlanations) values were computed to understand which features 
-            most strongly influence predictions and how they impact each class.
-        </p>
+        <h2>Model interpretability (SHAP)</h2>
+        <p>SHAP (SHapley Additive exPlanations) values were computed to understand which features most strongly influence predictions and how they impact each class.</p>
 
-        <h3>Feature Importance Plots</h3>
         <div class="shap-grid">
+            {% for plot in [
+                {'title':'Global feature importance','file':'shap_summary_beeswarm.png','alt':'SHAP global feature importance'},
+                {'title':'Mean absolute SHAP','file':'shap_bar_global.png','alt':'SHAP summary'},
+                {'title':'Top single-prediction explanation','file':'shap_waterfall_samples.png','alt':'SHAP top features'},
+                {'title':'Class-specific SHAP values','file':'shap_class_heatmap.png','alt':'SHAP class-specific analysis'},
+                {'title':'Partial dependence (top 4)','file':'pdp_top4_features.png','alt':'Partial dependence plot'},
+                {'title':'Permutation importance','file':'permutation_importance.png','alt':'Permutation importance'}
+            ] %}
             <div class="shap-plot">
-                <h4>Global Feature Importance</h4>
-                <img src="{{ url_for('static', filename='images/shap_summary_beeswarm.png') }}" 
-                     alt="SHAP Global Feature Importance" 
+                <h4>{{ plot.title }}</h4>
+                <img src="{{ url_for('static', filename='images/' ~ plot.file) }}" alt="{{ plot.alt }}"
                      onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <p class="image-placeholder" style="display:none;">
-                    [SHAP Global Feature Importance Plot]<br>
-                    <em>Place image at: static/images/shap_summary_beeswarm.png</em>
+                <p class="image-placeholder" style="display:none">
+                    [{{ plot.title }}]<br>
+                    <em>Place image at: static/images/{{ plot.file }}</em>
                 </p>
             </div>
-
-            <div class="shap-plot">
-                <h4>Mean Absolute SHAP</h4>
-                <img src="{{ url_for('static', filename='images/shap_bar_global.png') }}" 
-                     alt="SHAP Summary Plot" 
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <p class="image-placeholder" style="display:none;">
-                    [SHAP Summary Plot]<br>
-                    <em>Place image at: static/images/shap_bar_global.png</em>
-                </p>
-            </div>
-
-            <div class="shap-plot">
-                <h4>Top Single Prediction Explanation</h4>
-                <img src="{{ url_for('static', filename='images/shap_waterfall_samples.png') }}" 
-                     alt="SHAP Top Features" 
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <p class="image-placeholder" style="display:none;">
-                    [SHAP Top Features Plot]<br>
-                    <em>Place image at: static/images/shap_waterfall_samples</em>
-                </p>
-            </div>
-
-            <div class="shap-plot">
-                <h4>Class-Specific SHAP Values</h4>
-                <img src="{{ url_for('static', filename='images/shap_class_heatmap.png') }}" 
-                     alt="SHAP Class-Specific Analysis" 
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <p class="image-placeholder" style="display:none;">
-                    [SHAP Class-Specific Plot]<br>
-                    <em>Place image at: static/images/shap_class_specific.png</em>
-                </p>
-            </div>
-
-            <div class="shap-plot">
-                <h4>Partial Dependence Plot (Example)</h4>
-                <img src="{{ url_for('static', filename='images/pdp_top4_features.png') }}" 
-                     alt="Partial Dependence Plot" 
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <p class="image-placeholder" style="display:none;">
-                    [Partial Dependence Plot]<br>
-                    <em>Place image at: static/images/pdp_example.png</em>
-                </p>
-            </div>
-
-            <div class="shap-plot">
-                <h4>Permutation Importance</h4>
-                <img src="{{ url_for('static', filename='images/permutation_importance.png') }}" 
-                     alt="Permutation Importance" 
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                <p class="image-placeholder" style="display:none;">
-                    [Permutation Importance Plot]<br>
-                    <em>Place image at: static/images/permutation_importance.png</em>
-                </p>
-            </div>
+            {% endfor %}
         </div>
 
-        <p class="note">
-            <strong>Note:</strong> SHAP plots are generated from <code>shap_interpretability.py</code> 
-            and saved in <code>model_outputs_prelaunch/shap_outputs/</code>. 
-            Copy the PNG files to <code>static/images/</code> for display.
-        </p>
+        <p class="note"><strong>Note:</strong> Click any plot to enlarge. Source files live in <code>model_outputs_prelaunch/shap_outputs/</code>; copy them into <code>static/images/</code> for display.</p>
     </div>
 
-    <!-- Key Findings -->
     <div class="card">
-        <h2>🔍 Key Findings</h2>
+        <h2>Key findings</h2>
         <ul>
-            <li>
-                <strong>Most Influential Features</strong>: Store page quality (trailers, screenshots, detailed descriptions), 
-                publisher backing, platform reach, and localization support.
-            </li>
-            <li>
-                <strong>Genre Effects</strong>: Indie games dominate the dataset but show lower average success rates. 
-                Action, Strategy, and RPG genres correlate with higher owner tiers.
-            </li>
-            <li>
-                <strong>Pricing Strategy</strong>: Mid-range pricing ($9.99–$19.99) shows optimal performance. 
-                Free-to-play games exhibit bimodal distribution (either very successful or fail quickly).
-            </li>
-            <li>
-                <strong>Release Timing</strong>: October–December release months correlate with slightly higher success 
-                (likely due to holiday sales).
-            </li>
-            <li>
-                <strong>Steam Integration</strong>: Achievements, trading cards, and Workshop support positively 
-                correlate with owner tier, suggesting community engagement features matter.
-            </li>
+            <li><strong>Most influential features</strong>: store page quality (trailers, screenshots, detailed descriptions), publisher backing, platform reach, localization.</li>
+            <li><strong>Genre effects</strong>: indie dominates the dataset but shows lower average success; Action, Strategy, RPG correlate with higher tiers.</li>
+            <li><strong>Pricing strategy</strong>: mid-range ($9.99–$19.99) performs best. Free-to-play is bimodal (very successful or fails fast).</li>
+            <li><strong>Release timing</strong>: October–December slightly outperforms (holiday sales effect).</li>
+            <li><strong>Steam integration</strong>: achievements, trading cards, and Workshop support correlate positively with owner tier.</li>
         </ul>
     </div>
 
-    <!-- Limitations -->
     <div class="card">
-        <h2>⚠️ Limitations</h2>
+        <h2>Limitations</h2>
         <ul>
-            <li>
-                <strong>Platform-Specific</strong>: Model is trained exclusively on Steam data. 
-                Predictions for other platforms (Epic, GOG, consoles) are not reliable.
-            </li>
-            <li>
-                <strong>Temporal Drift</strong>: Gaming trends evolve rapidly. The model should be retrained 
-                periodically with updated data to maintain accuracy.
-            </li>
-            <li>
-                <strong>Data Quality</strong>: SteamSpy provides estimated owner ranges (not exact counts), 
-                which introduces some noise into the training data.
-            </li>
-            <li>
-                <strong>Causation vs Correlation</strong>: The model identifies correlations, not causation. 
-                A high prediction doesn't guarantee success—game quality is the ultimate factor.
-            </li>
-            <li>
-                <strong>Niche Genres</strong>: Performance on underrepresented genres (e.g., Racing, Sports) 
-                may be less reliable due to limited training samples.
-            </li>
+            <li><strong>Platform-specific</strong>: Steam only; predictions for Epic / GOG / consoles are unreliable.</li>
+            <li><strong>Temporal drift</strong>: gaming trends evolve; retrain periodically with fresh data.</li>
+            <li><strong>Data quality</strong>: SteamSpy provides estimated owner ranges (not exact counts), introducing noise.</li>
+            <li><strong>Causation vs correlation</strong>: high prediction ≠ guaranteed success — game quality matters most.</li>
+            <li><strong>Niche genres</strong>: under-represented genres (Racing, Sports) are less reliable.</li>
         </ul>
     </div>
 
-    <!-- Download Thesis -->
     <div class="card">
-        <h2>📄 Download Full Thesis</h2>
-        <p>
-            The complete thesis document is available for download:
-        </p>
-        <a href="{{ url_for('static', filename='thesis/Bit-by-Bit_Thesis.pdf') }}" 
-           class="btn-download" 
-           target="_blank"
-           download>
-            📥 Download Thesis PDF
-        </a>
-        <p class="note">
-            <em>If the PDF is not available, place it at: <code>static/thesis/Bit-by-Bit_Thesis.pdf</code></em>
-        </p>
+        <h2>Download full thesis</h2>
+        <p>The complete thesis document is available for download:</p>
+        <a href="{{ url_for('static', filename='thesis/Bit-by-Bit_Thesis.pdf') }}" class="btn btn-primary" target="_blank" download>Download thesis PDF</a>
+        <p class="note"><em>If the PDF is not available, place it at <code>static/thesis/Bit-by-Bit_Thesis.pdf</code>.</em></p>
     </div>
 
-    <!-- References -->
     <div class="card">
-        <h2>📖 References</h2>
-        <ol class="references">
+        <h2>References</h2>
+        <ol>
             <li>Dietterich, T. G. (2000). Ensemble Methods in Machine Learning. <em>Multiple Classifier Systems</em>.</li>
             <li>Ma, X. (2025). Predicting Video Game Success Using Multi-Platform Data.</li>
             <li>Mienye, I. D., et al. (2022). A Survey of Ensemble Learning Techniques.</li>
             <li>Wood, M., et al. (2023). Diversity in Ensemble Learning: Theoretical and Empirical Analysis.</li>
             <li>Andraž, P., et al. (2021). Validating Steam as a Data Source for Success Prediction.</li>
-            <li>Kainz, F., & Pirker, J. (2023). Large-Scale Steam Data Collection and Analysis.</li>
+            <li>Kainz, F., &amp; Pirker, J. (2023). Large-Scale Steam Data Collection and Analysis.</li>
         </ol>
     </div>
 
-    <!-- Acknowledgments -->
     <div class="card">
-        <h2>🙏 Acknowledgments</h2>
-        <p>
-            We extend our gratitude to our thesis adviser, <strong>Ms. Elisa V. Malasaga</strong>, 
-            for her guidance and support throughout this research. We also thank the 
-            <strong>FEU Institute of Technology Department of Computer Science</strong> 
-            for providing the resources and environment necessary to complete this project.
-        </p>
-        <p>
-            Special thanks to the developers of the open-source libraries used in this project: 
-            scikit-learn, XGBoost, SHAP, Pandas, Flask, and Gunicorn.
-        </p>
+        <h2>Acknowledgments</h2>
+        <p>Our thanks to thesis adviser <strong>Ms. Elisa V. Malasaga</strong> for her guidance, and to the <strong>FEU Institute of Technology Department of Computer Science</strong> for resources and support. Special thanks to the maintainers of scikit-learn, XGBoost, SHAP, Pandas, Flask, and Gunicorn.</p>
     </div>
 
-    <!-- Contact -->
     <div class="card">
-        <h2>📧 Contact</h2>
-        <p>
-            For questions or collaboration inquiries, please contact the research team via:
-        </p>
-        <p><strong>Email:</strong> [Insert team email or leave blank]</p>
+        <h2>Contact</h2>
+        <p><strong>Email:</strong> bitbybit@gmail.com</p>
         <p><strong>Institution:</strong> FEU Institute of Technology, Manila, Philippines</p>
     </div>
 </div>
