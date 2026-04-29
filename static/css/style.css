@@ -69,6 +69,7 @@
   /* Type */
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-brand: "Fraunces", "Iowan Old Style", "Apple Garamond", Georgia, "Times New Roman", serif;
 
   /* Motion */
   --ease: cubic-bezier(.2, .7, .2, 1);
@@ -151,12 +152,59 @@ ul, ol { list-style: none; }
   backdrop-filter: saturate(140%) blur(10px);
   border-bottom: 1px solid var(--border);
 }
-.topbar-left { display: flex; align-items: center; gap: 12px; flex: 1; }
-.topbar-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.02em; }
-.topbar-brand .dot {
+.topbar-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.topbar-tagline-link {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+.topbar-tagline-link:hover .brand-tagline { color: var(--fg); }
+
+.brand-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  flex-shrink: 0;
+}
+.brand-icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: block;
+  object-fit: contain;
+  box-shadow: var(--shadow-sm);
+}
+.brand-icon-wrap .dot {
   width: 28px; height: 28px; border-radius: 8px;
   background: linear-gradient(135deg, var(--sage-400), var(--sage-600));
   box-shadow: var(--shadow-sm);
+}
+.brand-wordmark {
+  font-family: var(--font-brand);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--fg);
+  flex-shrink: 0;
+  line-height: 1;
+}
+.brand-tagline {
+  font-family: var(--font-brand);
+  font-size: 14px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--fg-muted);
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  transition: color var(--dur) var(--ease);
+}
+@media (max-width: 640px) {
+  .brand-tagline { font-size: 13px; }
 }
 .topbar-right { display: flex; align-items: center; gap: 8px; }
 .icon-btn {
@@ -190,25 +238,46 @@ ul, ol { list-style: none; }
   transition: width var(--dur) var(--ease);
 }
 
-.sidebar-brand {
-  padding: 22px 20px 14px;
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  min-height: 52px;
   border-bottom: 1px solid var(--border);
 }
-.sidebar-brand .logo {
-  font-family: var(--font-mono);
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--sage-600);
-  letter-spacing: 0.06em;
+.sidebar-brand-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+  padding: 2px 4px;
+  border-radius: var(--r-sm);
+  transition: opacity var(--dur) var(--ease);
 }
-.sidebar-brand .logo-full {
-  margin-top: 4px;
-  font-size: 11px;
-  color: var(--fg-subtle);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
+.sidebar-brand-mini:hover { opacity: 0.85; }
+.sidebar-brand-mini .brand-wordmark {
+  font-size: 20px;
+  letter-spacing: 0.01em;
 }
-.layout.sidebar-collapsed .sidebar-brand .logo-full { display: none; }
+.sidebar-toggle-btn { display: inline-flex; }
+.sidebar-close-btn { display: none; }
+/* When collapsed: hide wordmark, stack icon + toggle vertically and center them */
+.layout.sidebar-collapsed .sidebar-header {
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 6px;
+  min-height: auto;
+}
+.layout.sidebar-collapsed .sidebar-brand-mini { display: none; }
+@media (max-width: 900px) {
+  .sidebar-toggle-btn { display: none; }
+  .sidebar-close-btn { display: inline-flex; }
+}
 
 .sidebar-menu { flex: 1; padding: 14px 10px; overflow-y: auto; }
 .sidebar-menu .group-label {
@@ -681,7 +750,7 @@ ul, ol { list-style: none; }
 
 /* Probability bars */
 .probability-bars { display: flex; flex-direction: column; gap: 8px; }
-.prob-item { display: grid; grid-template-columns: 110px 1fr; gap: 12px; align-items: center; }
+.prob-item { display: grid; grid-template-columns: minmax(96px, 130px) 1fr; gap: 12px; align-items: center; }
 .prob-label {
   font-size: 12px;
   color: var(--fg-muted);
@@ -695,34 +764,49 @@ ul, ol { list-style: none; }
   height: 22px;
   background: var(--bg-sunken);
   border-radius: var(--r-pill);
-  /* visible so the % text can spill outside narrow bars */
   overflow: visible;
 }
-.prob-bar {
-  position: relative;
-  height: 100%;
-  min-width: 28px;
+.prob-bar-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  min-width: 2px;
+  max-width: 100%;
   background: linear-gradient(90deg, var(--sage-400), var(--sage-600));
-  color: #fff;
+  border-radius: var(--r-pill);
+  width: 0;
+  animation: grow 0.9s var(--ease) forwards;
+}
+/* The % label is anchored to the END of the fill via inline `left: <pct>%`.
+   - Default (wide enough): sits INSIDE the fill, right-aligned, white text.
+   - .is-outside (fill < 15%): sits OUTSIDE the fill, left-aligned, muted text. */
+.prob-bar-value {
+  position: absolute;
+  top: 50%;
+  transform: translate(-100%, -50%);
+  padding-right: 8px;
   font-size: 11px;
   font-weight: 600;
   font-family: var(--font-mono);
-  display: flex; align-items: center; justify-content: flex-end;
-  padding: 0 10px;
-  border-radius: var(--r-pill);
+  color: #fff;
   white-space: nowrap;
-  width: 0;
-  animation: grow 0.9s var(--ease) forwards;
-  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+  animation: fadeInBar 0.4s var(--ease) 0.6s forwards;
 }
-/* If bar fill is narrow (<14% of container), shift label outside on the right */
-.prob-item.is-predicted .prob-bar {
+.prob-bar-value.is-outside {
+  transform: translate(0, -50%);
+  padding-right: 0;
+  padding-left: 6px;
+  color: var(--fg-muted);
+}
+.prob-item.is-predicted .prob-bar-fill {
   background: linear-gradient(90deg, var(--sage-500), var(--sage-700));
   box-shadow: 0 0 0 2px color-mix(in oklab, var(--sage-500) 30%, transparent);
 }
 @keyframes grow { from { width: 0; } }
+@keyframes fadeInBar { to { opacity: 1; } }
 .probability-bars.small .prob-bar-container { height: 18px; }
-.probability-bars.small .prob-bar { font-size: 10px; }
+.probability-bars.small .prob-bar-value { font-size: 10px; }
 
 /* Base model accordion */
 .model-details {

@@ -92,10 +92,13 @@
             <h3>Class Probabilities</h3>
             <div class="probability-bars">
                 {% for i in range(result.probabilities|length) %}
+                {% set p = result.probabilities[i] %}
                 <div class="prob-item">
                     <span class="prob-label">{{ result.class_labels[i] }}</span>
                     <div class="prob-bar-container">
-                        <div class="prob-bar" style="width: {{ result.probabilities[i] }}%">{{ result.probabilities[i] }}%</div>
+                        <div class="prob-bar-fill" style="width: {{ p }}%"></div>
+                        <span class="prob-bar-value{% if p < 15 %} is-outside{% endif %}"
+                              style="left: {{ p }}%">{{ p }}%</span>
                     </div>
                 </div>
                 {% endfor %}
@@ -109,10 +112,13 @@
                 <summary>{{ model_name }}</summary>
                 <div class="probability-bars small">
                     {% for i in range(probs|length) %}
+                    {% set p = probs[i] %}
                     <div class="prob-item">
                         <span class="prob-label">{{ result.class_labels[i] }}</span>
                         <div class="prob-bar-container">
-                            <div class="prob-bar" style="width: {{ probs[i] }}%">{{ probs[i] }}%</div>
+                            <div class="prob-bar-fill" style="width: {{ p }}%"></div>
+                            <span class="prob-bar-value{% if p < 15 %} is-outside{% endif %}"
+                                  style="left: {{ p }}%">{{ p }}%</span>
                         </div>
                     </div>
                     {% endfor %}
