@@ -1,0 +1,70 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SAGE - Game Success Predictor{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Left Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+        
+
+        <!-- Sidebar Header with Logo and Toggle -->
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <div class="logo">SAGE</div>
+                <div class="logo-full">Steam Analysis<br>& Game Ensemble</div>
+            </div>
+            
+            </button>
+        </div>
+
+        <!-- Sidebar Menu -->
+        <nav class="sidebar-menu">
+            <ul>
+                <li>
+                    <a href="/" class="{% if request.path == '/' %}active{% endif %}">
+                        <span class="menu-icon">🎯</span>
+                        <span class="menu-text">Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/model-info" class="{% if request.path == '/model-info' %}active{% endif %}">
+                        <span class="menu-icon">📊</span>
+                        <span class="menu-text">Model Metrics</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/guide" class="{% if request.path == '/guide' %}active{% endif %}">
+                        <span class="menu-icon">📖</span>
+                        <span class="menu-text">User Guide</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/about" class="{% if request.path == '/about' %}active{% endif %}">
+                        <span class="menu-icon">ℹ️</span>
+                        <span class="menu-text">About</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Sidebar Footer -->
+        <div class="sidebar-footer">
+            <p>&copy; 2026 FEU-Tech<br>Ensemble Learning Thesis</p>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+   
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

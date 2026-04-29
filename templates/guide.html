@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}User Guide - Game Success Predictor{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <h1>📖 User Guide</h1>
+    <p class="page-subtitle">How to use the Game Success Prediction System</p>
+
+    <!-- Quick Start -->
+    <div class="card">
+        <h2>🚀 Quick Start</h2>
+        <ol class="steps-list">
+            <li>
+                <strong>Go to the Dashboard</strong><br>
+                Click "Dashboard" in the top navigation to access the prediction form.
+            </li>
+            <li>
+                <strong>Fill in Game Features</strong><br>
+                Enter the pre-launch attributes of your game across all 10 sections (Pricing, Release, Genre, Platform, etc.).
+            </li>
+            <li>
+                <strong>Submit for Prediction</strong><br>
+                Click the "🔮 Predict Success" button to run the ensemble model.
+            </li>
+            <li>
+                <strong>Review Results</strong><br>
+                View the predicted owner tier, confidence score, class probabilities, and actionable recommendations.
+            </li>
+        </ol>
+    </div>
+
+    <!-- Feature Descriptions -->
+    <div class="card">
+        <h2>📋 Feature Descriptions</h2>
+        <p>Below are all 48 pre-launch features organized by category:</p>
+
+        {% for section in form_sections %}
+        <div class="feature-section">
+            <h3>{{ section.title }}</h3>
+            <table class="feature-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>Range</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for field in section.fields %}
+                    {% if not field.get('hidden') %}
+                    <tr>
+                        <td><code>{{ field.name }}</code></td>
+                        <td>{{ field.label }}</td>
+                        <td>
+                            {% if field.type == 'number' %}Number
+                            {% elif field.type == 'toggle' %}Yes/No
+                            {% elif field.type == 'select' %}Selection
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if field.type == 'number' %}
+                                {{ field.min }} - {{ field.max }}
+                            {% elif field.type == 'toggle' %}
+                                0 or 1
+                            {% elif field.type == 'select' %}
+                                {{ field.options|length }} options
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Understanding Results -->
+    <div class="card">
+        <h2>🎯 Understanding Results</h2>
+        
+        <h3>Predicted Owner Tier</h3>
+        <p>The model classifies your game into one of 6 ordinal owner tiers:</p>
+        <ul>
+            <li><strong>Class 0 (≤10K)</strong>: Common Indie — Up to 10,000 owners</li>
+            <li><strong>Class 1 (35K)</strong>: Niche — 10,000 – 35,000 owners</li>
+            <li><strong>Class 2 (75K)</strong>: Growing — 35,000 – 75,000 owners</li>
+            <li><strong>Class 3 (150K)</strong>: Established — 75,000 – 150,000 owners</li>
+            <li><strong>Class 4 (350K)</strong>: Popular — 150,000 – 350,000 owners</li>
+            <li><strong>Class 5 (≥750K)</strong>: Breakout Hit — 750,000+ owners</li>
+        </ul>
+
+        <h3>Confidence Score</h3>
+        <p>The confidence percentage (0-100%) represents how certain the model is about its prediction. Higher confidence indicates stronger signal from the features.</p>
+        <ul>
+            <li><strong>80-100%</strong>: Very confident prediction</li>
+            <li><strong>60-79%</strong>: Moderately confident</li>
+            <li><strong>40-59%</strong>: Low confidence (borderline case)</li>
+            <li><strong>Below 40%</strong>: Uncertain (features are mixed/weak)</li>
+        </ul>
+
+        <h3>Class Probabilities</h3>
+        <p>Shows the predicted probability for each of the 6 classes. The class with the highest probability is selected as the final prediction.</p>
+
+        <h3>Recommendations</h3>
+        <ul>
+            <li><strong>Strengths</strong>: Features currently working in your favor (high positive impact)</li>
+            <li><strong>Improvements</strong>: Actionable suggestions to increase predicted success tier (based on SHAP analysis)</li>
+        </ul>
+    </div>
+
+    <!-- Best Practices -->
+    <div class="card">
+        <h2>💡 Best Practices</h2>
+        <ul>
+            <li>
+                <strong>Be Accurate</strong>: Enter realistic values. The model is trained on real Steam data, so inflated numbers may lead to misleading predictions.
+            </li>
+            <li>
+                <strong>Focus on Pre-Launch Features</strong>: This model predicts success based ONLY on pre-launch attributes (no reviews, no playtime data). Only fill in features you can control before release.
+            </li>
+            <li>
+                <strong>Use Recommendations</strong>: The improvement suggestions are based on SHAP feature importance. Prioritize high-impact features (higher impact scores).
+            </li>
+            <li>
+                <strong>Test Multiple Scenarios</strong>: Try different configurations (e.g., with/without publisher, different pricing) to see how predictions change.
+            </li>
+            <li>
+                <strong>Don't Over-Optimize</strong>: The model shows correlations, not causation. A high prediction doesn't guarantee success—focus on game quality first.
+            </li>
+        </ul>
+    </div>
+
+    <!-- FAQ -->
+    <div class="card">
+        <h2>❓ Frequently Asked Questions</h2>
+        
+        <details class="faq-item">
+            <summary>What if I don't have a publisher?</summary>
+            <p>Set <code>has_publisher</code> to 0 (unchecked) and <code>publisher_count</code> to 0. The model will adjust predictions accordingly. Note that publisher backing is a positive signal but not required for success.</p>
+        </details>
+
+        <details class="faq-item">
+            <summary>Can I predict for unreleased games?</summary>
+            <p>Yes! This model is specifically designed for pre-launch prediction. All 48 features are available before release (pricing, store page, platform support, etc.).</p>
+        </details>
+
+        <details class="faq-item">
+            <summary>What if some features are unknown?</summary>
+            <p>Use the default values provided in the form. For binary features (yes/no toggles), leave unchecked (0) if the feature is not planned.</p>
+        </details>
+
+        <details class="faq-item">
+            <summary>Why is my prediction confidence low?</summary>
+            <p>Low confidence occurs when feature values fall in "borderline" regions where multiple classes overlap. Try adjusting key features (store page quality, pricing, platform support) to see if confidence improves.</p>
+        </details>
+
+        <details class="faq-item">
+            <summary>How accurate is the model?</summary>
+            <p>The ensemble achieves 70.85% accuracy and 0.6211 weighted F1 score on the test set. See the <a href="/model-info">Model Metrics</a> page for detailed performance.</p>
+        </details>
+
+        <details class="faq-item">
+            <summary>Can I use this for platforms other than Steam?</summary>
+            <p>No. The model is trained exclusively on Steam data. Predictions for Epic Games, GOG, or console platforms may not be accurate.</p>
+        </details>
+    </div>
+
+    <!-- Video Tutorial (Optional Placeholder) -->
+    <div class="card note">
+        <h2>🎥 Video Tutorial</h2>
+        <p><em>Coming soon: Step-by-step video walkthrough of the prediction system.</em></p>
+    </div>
+</div>
+{% endblock %}

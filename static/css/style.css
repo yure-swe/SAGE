@@ -1,0 +1,845 @@
+/* =============================================================================
+   CSS for Game Success Predictor (SAGE)
+   ============================================================================= */
+
+/* ── CSS Variables ─────────────────────────────────────────────────────── */
+:root {
+    /* Sage Theme (Slightly darker for visibility on light backgrounds) */
+    --primary-color: #6D7A63; 
+    --primary-hover: #55604D;
+    
+    /* Backgrounds: Warm, soft light tones */
+    --bg-main: #F4F6F4;      /* Light sage-tinted off-white */
+    --bg-sidebar: #E9ECE9;   /* Slightly deeper than main */
+    --bg-card: #FFFFFF;      /* Crisp white for cards to create depth */
+    
+    /* Text: Deep grey instead of pure black for comfort */
+    --text-primary: #2D332D;
+    --text-secondary: #5C665C;
+    
+    /* Borders: Soft muted green-grey */
+    --border-color: #D3DAD3;
+    
+    /* Functional Colors (Muted to match the theme) */
+    --success-color: #5D8C5D;
+    --warning-color: #B8860B;
+    --error-color: #A54A4A;
+    
+    --sidebar-width: 235px;
+  
+}
+
+/* ── Reset & Base ──────────────────────────────────────────────────────── */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--text-primary);
+    background: var(--bg-main);
+    line-height: 1.6;
+}
+
+/* ── Sidebar Navigation ─────────────────────────────────── */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: var(--sidebar-width);
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border-color);
+    transition: width 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
+}
+
+/* Sidebar Header */
+.sidebar-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 70px;
+}
+
+.sidebar-brand {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.sidebar-brand .logo {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.sidebar-brand .logo-full {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.sidebar.collapsed .logo-full {
+    display: none;
+}
+
+.sidebar-toggle {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    color: var(--text-secondary);
+    transition: background 0.2s;
+}
+
+.sidebar-toggle:hover {
+    background: var(--border-color);
+}
+
+.sidebar.collapsed .sidebar-toggle {
+    margin: 0 auto;
+}
+
+/* Sidebar Menu */
+.sidebar-menu {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+.sidebar-menu ul {
+    list-style: none;
+}
+
+.sidebar-menu li {
+    margin-bottom: 4px;
+}
+
+.sidebar-menu a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 12px;
+    color: var(--text-primary);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.sidebar-menu a:hover {
+    background: var(--border-color);
+}
+
+.sidebar-menu a.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.sidebar-menu .menu-icon {
+    font-size: 20px;
+    text-align: center;
+}
+
+.sidebar-menu .menu-icon svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+}
+
+.sidebar-menu .menu-text {
+    flex: 1;
+}
+
+.sidebar.collapsed .menu-text {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-menu a {
+    justify-content: center;
+    padding: 12px;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid var(--border-color);
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.sidebar.collapsed .sidebar-footer {
+    display: none;
+}
+
+/* If the html element has the class, apply these styles to the sidebar */
+.sidebar-collapsed .sidebar {
+     width: var(--sidebar-collapsed-width);
+}
+
+
+
+/* ── Main Content Area ─────────────────────────────────────────────────── */
+.main-content {
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+    padding: 30px;
+    transition: margin-left 0.3s ease;
+}
+
+.sidebar.collapsed ~ .main-content {
+    margin-left: var(--sidebar-collapsed-width);
+}
+
+/* ── Page Container ────────────────────────────────────────────────────── */
+.page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-container h1 {
+    font-size: 32px;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.page-subtitle {
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+    font-size: 16px;
+}
+
+/* Compact form sections - 2 columns on desktop */
+.form-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+/* Toggle inputs inline with label */
+.form-field.toggle-field {
+    display: inline-block;
+    margin: 4px 8px 8px 0;
+}
+
+.form-field.toggle-field label {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: var(--bg-sidebar);
+    border: 1px solid var(--border-color);
+    border-radius: 20px; /* Gives the rounded tag shape */
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    user-select: none;
+    margin: 0;
+}
+
+
+/* Container for the main dashboard content */
+
+
+/* Style the form panel to be a centered, wider card */
+.form-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Style the results panel to appear centered at the bottom */
+.results-panel {
+    margin-top: 40px;
+    width: 100%;
+}
+
+/* Ensure form sections look good in a single-column layout */
+.form-section {
+    display: block; /* Removed grid for a full-width flow */
+    margin-bottom: 24px;
+}
+
+.field-group .form-field {
+    flex: 1;
+}
+
+/* ── Cards ─────────────────────────────────────────────────────────────── */
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.card h2 {
+    font-size: 20px;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.card h3 {
+    font-size: 16px;
+    margin-top: 20px;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.card.note {
+    background: #fef3c7;
+    border-color: #fcd34d;
+}
+
+/* ── Dashboard Layout ──────────────────────────────────────────────────── */
+.dashboard-container {
+    max-width: 1100px; /* Wider form area */
+    margin: 40px auto; /* Centers the container */
+    padding: 0 20px;
+}
+
+.form-panel, .results-panel {
+    min-height: 500px;
+}
+
+.form-subtitle {
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+/* ── Enhanced Form Grid ──────────────────────────────────────────────── */
+.form-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+/* Header line styles */
+.form-section h3 {
+    font-size: 16px;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color); /* This adds the line below header */
+}
+
+/* This creates the multi-column layout for the fields inside the section */
+.fields-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    align-items: start;
+}
+
+.form-field {
+    margin-bottom: 0; /* Let the grid gap handle spacing */
+}
+
+/* ── Form Sections ─────────────────────────────────────────────────────── */
+.form-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.form-section h3 {
+    font-size: 16px;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.form-field {
+    margin-bottom: 16px;
+}
+
+.form-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.form-field input[type="number"],
+.form-field select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.form-field input[type="number"]:focus,
+.form-field select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.form-field input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+.btn-submit, .btn-reset, .btn-download {
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-block;
+    text-decoration: none;
+    text-align: center;
+}
+
+.btn-submit {
+    background: var(--primary-color);
+    color: white;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.btn-submit:hover {
+    background: var(--primary-hover);
+}
+
+.btn-reset {
+    background: var(--border-color);
+    color: var(--text-primary);
+    width: 100%;
+}
+
+.btn-reset:hover {
+    background: #d1d5db;
+}
+
+.btn-download {
+    background: var(--success-color);
+    color: white;
+}
+
+.btn-download:hover {
+    background: #059669;
+}
+
+/* ── Results Panel ─────────────────────────────────────────────────────── */
+.result-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.result-card h3 {
+    font-size: 16px;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.prediction-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.prediction-card h3 {
+    color: white;
+}
+
+.predicted-tier {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.tier-class {
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.tier-name {
+    font-size: 20px;
+}
+
+.tier-range {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 20px;
+}
+
+.confidence-meter {
+    margin-top: 20px;
+}
+
+.confidence-meter span {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: white;
+    border-radius: 12px;
+    transition: width 0.3s ease;
+}
+
+/* ── Probability Bars ──────────────────────────────────────────────────── */
+.probability-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.prob-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.prob-label {
+    min-width: 60px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.prob-bar-container {
+    flex: 1;
+    height: 28px;
+    background: var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.prob-bar {
+    height: 100%;
+    background: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: width 0.3s ease;
+}
+
+/* ── Model Details (Collapsible) ───────────────────────────────────────── */
+.model-details {
+    margin-bottom: 12px;
+}
+
+.model-details summary {
+    cursor: pointer;
+    padding: 10px;
+    background: var(--bg-sidebar);
+    border-radius: 6px;
+    font-weight: 500;
+    user-select: none;
+}
+
+.model-details summary:hover {
+    background: var(--border-color);
+}
+
+.model-details .probability-bars {
+    margin-top: 12px;
+    padding-left: 10px;
+}
+
+/* ── Recommendations ───────────────────────────────────────────────────── */
+.recommendation-list {
+    list-style: none;
+    padding: 0;
+}
+
+.recommendation-list li {
+    padding: 12px;
+    margin-bottom: 8px;
+    background: var(--bg-sidebar);
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.recommendation-list.positive li {
+    border-left: 4px solid var(--success-color);
+}
+
+.recommendation-list.improvements li {
+    border-left: 4px solid var(--warning-color);
+}
+
+.recommendation-list .impact {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+/* ── Empty State ───────────────────────────────────────────────────────── */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-state h2 {
+    font-size: 24px;
+    margin-bottom: 12px;
+}
+
+.empty-state p {
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+}
+
+.empty-icon {
+    font-size: 80px;
+    opacity: 0.3;
+}
+
+/* ── Tables ────────────────────────────────────────────────────────────── */
+.metrics-table, .info-table, .feature-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+}
+
+.metrics-table th, .metrics-table td,
+.info-table th, .info-table td,
+.feature-table th, .feature-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.metrics-table th,
+.feature-table th {
+    background: var(--bg-sidebar);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.metrics-table tr.highlight {
+    background: #fef3c7;
+}
+
+.info-table th {
+    width: 30%;
+    font-weight: 600;
+}
+
+.feature-table code {
+    background: var(--bg-sidebar);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Courier New', monospace;
+}
+
+/* ── User Guide Specific ───────────────────────────────────────────────── */
+.steps-list {
+    list-style: none;
+    counter-reset: step-counter;
+    padding-left: 0;
+}
+
+.steps-list li {
+    counter-increment: step-counter;
+    margin-bottom: 20px;
+    padding-left: 50px;
+    position: relative;
+}
+
+.steps-list li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 36px;
+    height: 36px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.feature-section {
+    margin-bottom: 30px;
+}
+
+.faq-item {
+    margin-bottom: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.faq-item summary {
+    cursor: pointer;
+    padding: 16px;
+    background: var(--bg-sidebar);
+    font-weight: 500;
+    user-select: none;
+}
+
+.faq-item summary:hover {
+    background: var(--border-color);
+}
+
+.faq-item p {
+    padding: 16px;
+    margin: 0;
+}
+
+/* ── About Page Specific ───────────────────────────────────────────────── */
+.team-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.team-list li {
+    padding: 8px 0;
+    font-size: 16px;
+}
+
+.shap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.shap-plot {
+    background: var(--bg-sidebar);
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.shap-plot h4 {
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.shap-plot img {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+}
+
+.image-placeholder {
+    text-align: center;
+    padding: 40px;
+    background: var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.references {
+    padding-left: 20px;
+}
+
+.references li {
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.metrics-explanation dt {
+    font-weight: 600;
+    margin-top: 12px;
+    color: var(--text-primary);
+}
+
+.metrics-explanation dd {
+    margin-left: 0;
+    margin-bottom: 12px;
+    color: var(--text-secondary);
+}
+
+/* ── Responsive Design ─────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .dashboard-container.results-visible {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 1024px) {
+    .dashboard-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .shap-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: var(--sidebar-collapsed-width);
+    }
+    
+    .sidebar .logo-full,
+    .sidebar .menu-text,
+    .sidebar-footer {
+        display: none;
+    }
+    
+    .sidebar .sidebar-menu a {
+        justify-content: center;
+        padding: 12px;
+    }
+    
+    .main-content {
+        margin-left: var(--sidebar-collapsed-width);
+        padding: 20px;
+    }
+    
+    .page-container h1 {
+        font-size: 24px;
+    }
+}

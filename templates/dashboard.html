@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Game Success Predictor{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="form-panel">
+        <h2>📝 Enter Game Features</h2>
+        <p class="form-subtitle">Fill in the pre-launch attributes of your game</p>
+        
+        <form method="POST" action="/" id="prediction-form">
+            {% for section in form_sections %}
+            <div class="form-section">
+                <h3>{{ section.title }}</h3>
+                
+                <div class="fields-grid">
+                    {% for field in section.fields %}
+                        {% if not field.get('hidden') %}
+                        <div class="form-field">
+                            <label for="{{ field.name }}">{{ field.label }}</label>
+                            
+                            {% if field.type == 'number' %}
+                                <input type="number" id="{{ field.name }}" name="{{ field.name }}" 
+                                       value="{{ form_data.get(field.name, field.default) if form_data else field.default }}"
+                                       min="{{ field.min }}" max="{{ field.max }}" step="{{ field.step }}">
+                            
+                            {% elif field.type == 'select' %}
+                                <select id="{{ field.name }}" name="{{ field.name }}">
+                                    {% for option in field.options %}
+                                        {% set value = option.split('=')[0] %}
+                                        {% set label = option.split('=')[1] %}
+                                        <option value="{{ value }}" 
+                                            {% if form_data %}
+                                                {% if form_data.get(field.name, field.default)|string == value %}selected{% endif %}
+                                            {% elif field.default|string == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+
+                            {% elif field.type == 'toggle' %}
+                                <div class="toggle-field">
+                                    <input type="checkbox" id="{{ field.name }}" name="{{ field.name }}" value="1" 
+                                           {% if form_data and form_data.get(field.name, field.default)|int == 1 %}checked{% endif %}>
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+
+            <button type="submit" class="btn-submit">🔮 Predict Success</button>
+            <button type="reset" class="btn-reset">🔄 Reset Form</button>
+        </form>
+    </div>
+
+    {% if show_results %}
+    <div class="results-panel">
+        <h2>📊 Prediction Results</h2>
+        
+        <div class="result-card prediction-card">
+            <h3>Predicted Owner Tier</h3>
+            <div class="predicted-tier">
+                <span class="tier-class">{{ result.predicted_label }}</span>
+                <span class="tier-name">{{ result.predicted_tier }}</span>
+            </div>
+            <p class="tier-range">{{ result.predicted_range }}</p>
+            
+            <div class="confidence-meter">
+                <span>Confidence: {{ result.confidence }}%</span>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ result.confidence }}%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="result-card">
+            <h3>Class Probabilities</h3>
+            <div class="probability-bars">
+                {% for i in range(result.probabilities|length) %}
+                <div class="prob-item">
+                    <span class="prob-label">{{ result.class_labels[i] }}</span>
+                    <div class="prob-bar-container">
+                        <div class="prob-bar" style="width: {{ result.probabilities[i] }}%">
+                            {{ result.probabilities[i] }}%
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="result-card">
+            <h3>Base Model Predictions</h3>
+            {% for model_name, probs in result.base_probs.items() %}
+            <details class="model-details">
+                <summary>{{ model_name }}</summary>
+                <div class="probability-bars small">
+                    {% for i in range(probs|length) %}
+                    <div class="prob-item">
+                        <span class="prob-label">{{ result.class_labels[i] }}</span>
+                        <div class="prob-bar-container">
+                            <div class="prob-bar" style="width: {{ probs[i] }}%">
+                                {{ probs[i] }}%
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </details>
+            {% endfor %}
+        </div>
+
+        <div class="result-card">
+            <h3>✅ Strengths</h3>
+            {% if recommendations.positives %}
+            <ul class="recommendation-list positive">
+                {% for rec in recommendations.positives %}
+                <li>
+                    <strong>{{ rec.label }}</strong>: {{ rec.message }}
+                    <span class="impact">(Impact: {{ rec.impact }})</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No significant positive signals detected.</p>
+            {% endif %}
+        </div>
+
+        <div class="result-card">
+            <h3>💡 Improvement Suggestions</h3>
+            {% if recommendations.improvements %}
+            <ul class="recommendation-list improvements">
+                {% for rec in recommendations.improvements %}
+                <li>
+                    <strong>{{ rec.label }}</strong>: {{ rec.message }}
+                    <span class="impact">(Impact: {{ rec.impact }})</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No critical improvements needed.</p>
+            {% endif %}
+        </div>
+
+        <button onclick="window.location.href='/'" class="btn-reset">🔄 Predict Another Game</button>
+    </div>
+    {% else %}
+    <div class="results-panel">
+        <div class="empty-state">
+            <h2>🎯 Ready to Predict</h2>
+            <p>Fill in the game features on the left and click <strong>"Predict Success"</strong> to see results here.</p>
+            <div class="empty-icon">📊</div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+// Existing form validation
+document.getElementById('prediction-form').addEventListener('submit', function(e) {
+    const price = parseFloat(document.getElementById('price').value);
+    if (price < 0 || price > 200) {
+        alert('Price must be between 0 and 200 USD');
+        e.preventDefault();
+    }
+});
+<script>
+document.getElementById('prediction-form').addEventListener('submit', function(e) {
+    e.preventDefault(); // Stop page reload
+
+    // 1. Basic Validation
+    const price = parseFloat(document.getElementById('price').value);
+    if (price < 0 || price > 200) {
+        alert('Price must be between 0 and 200 USD');
+        return;
+    }
+
+    // 2. Prepare Data
+    const formData = new FormData(this);
+
+    // 3. Submit via Fetch
+    fetch('/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(html => {
+        // Create a temporary element to parse the returned HTML
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // Find the specific panels to update (the form and the results)
+        const newFormPanel = doc.querySelector('.form-panel');
+        const newResultsPanel = doc.querySelector('.results-panel');
+        
+        // Replace current content with new content
+        document.querySelector('.form-panel').innerHTML = newFormPanel.innerHTML;
+        
+        const resultsContainer = document.querySelector('.results-panel') || document.createElement('div');
+        resultsContainer.className = 'results-panel';
+        resultsContainer.innerHTML = newResultsPanel ? newResultsPanel.innerHTML : '';
+        
+        // Append the new results container if it didn't exist
+        if (!document.querySelector('.results-panel')) {
+            document.querySelector('.dashboard-container').appendChild(resultsContainer);
+        }
+
+        // 4. Scroll to results
+        const resultsPanel = document.querySelector('.results-panel');
+        if (resultsPanel) {
+            resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    })
+    .catch(error => console.error('Prediction error:', error));
+});
+</script>
+{% endblock %}

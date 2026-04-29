@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Model Metrics - Game Success Predictor{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <h1>📊 Model Performance Metrics</h1>
+    <p class="page-subtitle">Evaluation results of the ensemble learning model</p>
+
+    <!-- Performance Metrics Table -->
+    <div class="card">
+        <h2>Performance Comparison</h2>
+        <table class="metrics-table">
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Weighted F1</th>
+                    <th>Macro F1</th>
+                    <th>Accuracy</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="highlight">
+                    <td><strong>🏆 Ensemble (Stacked)</strong></td>
+                    <td>{{ "%.4f"|format(metrics.ensemble.weighted_f1) }}</td>
+                    <td>{{ "%.4f"|format(metrics.ensemble.macro_f1) }}</td>
+                    <td>{{ "%.4f"|format(metrics.ensemble.accuracy) }}</td>
+                </tr>
+                <tr>
+                    <td>Random Forest</td>
+                    <td>{{ "%.4f"|format(metrics.random_forest.weighted_f1) }}</td>
+                    <td>{{ "%.4f"|format(metrics.random_forest.macro_f1) }}</td>
+                    <td>{{ "%.4f"|format(metrics.random_forest.accuracy) }}</td>
+                </tr>
+                <tr>
+                    <td>Gradient Boosting</td>
+                    <td>{{ "%.4f"|format(metrics.gradient_boosting.weighted_f1) }}</td>
+                    <td>{{ "%.4f"|format(metrics.gradient_boosting.macro_f1) }}</td>
+                    <td>{{ "%.4f"|format(metrics.gradient_boosting.accuracy) }}</td>
+                </tr>
+                <tr>
+                    <td>XGBoost</td>
+                    <td>{{ "%.4f"|format(metrics.xgboost.weighted_f1) }}</td>
+                    <td>{{ "%.4f"|format(metrics.xgboost.macro_f1) }}</td>
+                    <td>{{ "%.4f"|format(metrics.xgboost.accuracy) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Dataset Information -->
+    <div class="card">
+        <h2>Dataset Information</h2>
+        <table class="info-table">
+            <tr>
+                <th>Total Games</th>
+                <td>{{ "{:,}".format(dataset_info.total_games) }}</td>
+            </tr>
+            <tr>
+                <th>Number of Features</th>
+                <td>{{ dataset_info.n_features }} (pre-launch only)</td>
+            </tr>
+            <tr>
+                <th>Number of Classes</th>
+                <td>{{ dataset_info.n_classes }} (ordinal owner tiers)</td>
+            </tr>
+            <tr>
+                <th>Train/Test Split</th>
+                <td>{{ dataset_info.train_test_split }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Class Distribution -->
+    <div class="card">
+        <h2>Class Distribution</h2>
+        <table class="metrics-table">
+            <thead>
+                <tr>
+                    <th>Class</th>
+                    <th>Owner Range</th>
+                    <th>Sample Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for class_id, info in class_ranges.items() %}
+                <tr>
+                    <td>Class {{ class_id }}</td>
+                    <td>{{ info.label }} — {{ info.tier }}</td>
+                    <td>{{ "{:,}".format(dataset_info.class_distribution["Class " ~ class_id ~ " (" ~ info.label ~ ")"]) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Metrics Explanation -->
+    <div class="card">
+        <h2>Metrics Explanation</h2>
+        <dl class="metrics-explanation">
+            <dt>Weighted F1 Score</dt>
+            <dd>Harmonic mean of precision and recall, weighted by class support. Ranges from 0 to 1 (higher is better).</dd>
+            
+            <dt>Macro F1 Score</dt>
+            <dd>Unweighted average F1 across all classes. Useful for evaluating performance on minority classes.</dd>
+            
+            <dt>Accuracy</dt>
+            <dd>Percentage of correctly classified games. Simple overall performance metric.</dd>
+        </dl>
+    </div>
+
+    <!-- Note -->
+    <div class="card note">
+        <p><strong>Note:</strong> The ensemble model combines predictions from Random Forest, Gradient Boosting, and XGBoost using a stacked meta-learner (XGBoost Classifier). This approach leverages the strengths of each base model to achieve superior generalization.</p>
+    </div>
+</div>
+{% endblock %}
