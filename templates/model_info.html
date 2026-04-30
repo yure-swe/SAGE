@@ -58,28 +58,7 @@
         </div>
     </div>
 
-    <!-- Dataset -->
-    <div class="card">
-        <h2>Dataset</h2>
-        <div class="metrics-grid" style="margin-top:6px">
-            <div class="metric-tile">
-                <div class="label">Total games</div>
-                <div class="value">{{ "{:,}".format(dataset_info.total_games) }}</div>
-            </div>
-            <div class="metric-tile">
-                <div class="label">Features</div>
-                <div class="value">{{ dataset_info.n_features }}</div>
-            </div>
-            <div class="metric-tile">
-                <div class="label">Classes</div>
-                <div class="value">{{ dataset_info.n_classes }}</div>
-            </div>
-            <div class="metric-tile">
-                <div class="label">Train / Test split</div>
-                <div class="value" style="font-size:20px">{{ dataset_info.train_test_split }}</div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Class distribution -->
     <div class="card">

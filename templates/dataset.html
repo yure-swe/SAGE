@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}Dataset — SAGE Game Success Predictor{% endblock %}
+{% block meta_description %}The training dataset behind SAGE: sources, schema, preprocessing pipeline, and feature engineering applied to ~10,000 Steam games.{% endblock %}
+
+{% block content %}
+<div class="dataset-page">
+
+    <!-- ===================== HEADER ===================== -->
+    <header class="dataset-hero">
+        <span class="eyebrow">Training Data</span>
+        <h1>The dataset behind SAGE</h1>
+        <p class="lede">
+            SAGE is trained on roughly 10,000 Steam games merged from
+            <strong>SteamSpy</strong> (ownership &amp; review aggregates) and the
+            <strong>Steam Web API</strong> (store-page metadata). The pipeline
+            below shows exactly how the raw sources become the
+            <code>steam_10k_prelaunch.csv</code> file used by the model.
+        </p>
+    </header>
+
+    <!-- ===================== AT A GLANCE ===================== -->
+    <section class="dataset-stats" aria-label="Dataset at a glance">
+        <div class="stat-card">
+            <span class="stat-value">10,000</span>
+            <span class="stat-label">Games (rows)</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">71</span>
+            <span class="stat-label">Columns total</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">48</span>
+            <span class="stat-label">Pre-launch features used</span>
+        </div>
+        <div class="stat-card">
+            <span class="stat-value">6</span>
+            <span class="stat-label">Owner-tier classes</span>
+        </div>
+    </section>
+
+    <!-- ===================== SOURCES ===================== -->
+    <section class="dataset-section">
+        <h2>1 · Data sources</h2>
+        <div class="source-grid">
+            <article class="source-card">
+                <h3>SteamSpy (base CSV)</h3>
+                <p>Provides aggregate ownership buckets, review counts, playtime
+                statistics, price, genre flags, and release month. This forms the
+                <em>base</em> table keyed by <code>appid</code>.</p>
+                <ul class="chips">
+                    <li>owners</li><li>positive / negative</li><li>price</li>
+                    <li>release_month</li><li>genre flags</li>
+                </ul>
+            </article>
+            <article class="source-card">
+                <h3>Steam Web API (JSON)</h3>
+                <p>Per-game store-page metadata: descriptions, screenshots, trailers,
+                supported languages, platforms, categories, tags, packages, and
+                achievements. Loaded as a dict keyed by <code>appid</code>.</p>
+                <ul class="chips">
+                    <li>screenshots</li><li>movies</li><li>categories</li>
+                    <li>tags</li><li>supported_languages</li><li>publishers</li>
+                </ul>
+            </article>
+        </div>
+    </section>
+
+    <!-- ===================== PIPELINE ===================== -->
+    <section class="dataset-section">
+        <h2>2 · Preprocessing pipeline</h2>
+        <p class="section-intro">Two scripts produce the final training file.
+        The first enriches and merges; the second selects pre-launch-only
+        features and builds the classification target.</p>
+
+        <ol class="pipeline">
+            <li>
+                <span class="step-num">1</span>
+                <div>
+                    <h4>Load base CSV &amp; Steam JSON</h4>
+                    <p>Read SteamSpy CSV into a DataFrame; load Steam Web API JSON
+                    keyed by <code>appid</code> string.</p>
+                </div>
+            </li>
+            <li>
+                <span class="step-num">2</span>
+                <div>
+                    <h4>Extract pre-launch features from JSON</h4>
+                    <p>For each game, derive ~30 columns: platform support,
+                    language counts, screenshot &amp; trailer counts, description
+                    lengths, publisher/developer counts, Steam category flags
+                    (achievements, workshop, cloud, controller, VR…), tag counts
+                    and top-tag vote totals, package &amp; SKU counts.</p>
+                </div>
+            </li>
+            <li>
+                <span class="step-num">3</span>
+                <div>
+                    <h4>Merge on <code>appid</code> (left join)</h4>
+                    <p>Base CSV ⟕ JSON features. Rows with no JSON match keep
+                    their base columns; new numeric features are filled with
+                    <code>0</code>.</p>
+                </div>
+            </li>
+            <li>
+                <span class="step-num">4</span>
+                <div>
+                    <h4>Engineer composite scores</h4>
+                    <p>Seven derived features combine raw signals into
+                    interpretable proxies: <code>store_page_score</code>,
+                    <code>platform_reach</code>, <code>marketing_score</code>,
+                    <code>publisher_backing</code>, <code>localization_score</code>,
+                    <code>steam_integration</code>, and an
+                    <code>is_mature_content</code> flag.</p>
+                </div>
+            </li>
+            <li>
+                <span class="step-num">5</span>
+                <div>
+                    <h4>Drop post-launch columns (leakage prevention)</h4>
+                    <p>Reviews, playtime, CCU, and owners themselves are excluded
+                    from the model — they wouldn't exist before launch and would
+                    leak the target.</p>
+                </div>
+            </li>
+            <li>
+                <span class="step-num">6</span>
+                <div>
+                    <h4>Build ordinal target &amp; split</h4>
+                    <p>Owners bucket → ordinal class 0–5 (top sparse buckets
+                    merged into <code>≥750K</code>). Median imputation for any
+                    remaining numeric NaNs, then a stratified 80/20 train-test
+                    split followed by z-score scaling.</p>
+                </div>
+            </li>
+        </ol>
+    </section>
+
+    <!-- ===================== TARGET ===================== -->
+    <section class="dataset-section">
+        <h2>3 · Target variable</h2>
+        <p class="section-intro">The model predicts an <strong>ordinal owner
+        tier</strong>, not a raw owner count. The original 9 SteamSpy buckets
+        are collapsed to 6 because the top 4 had too few samples (n = 136, 88,
+        53, 19) for reliable learning.</p>
+
+        <div class="table-wrap">
+            <table class="schema-table">
+                <thead>
+                    <tr><th>Class</th><th>Owner tier</th><th>Notes</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>0</code></td><td>≤ 10K</td><td>Majority class (~69%)</td></tr>
+                    <tr><td><code>1</code></td><td>≤ 35K</td><td></td></tr>
+                    <tr><td><code>2</code></td><td>≤ 75K</td><td></td></tr>
+                    <tr><td><code>3</code></td><td>≤ 150K</td><td></td></tr>
+                    <tr><td><code>4</code></td><td>≤ 350K</td><td></td></tr>
+                    <tr><td><code>5</code></td><td>≥ 750K</td><td>Merged top 4 sparse buckets</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===================== FEATURES ===================== -->
+    <section class="dataset-section">
+        <h2>4 · Pre-launch features (49)</h2>
+        <p class="section-intro">Only signals that exist <em>before</em> a game
+        ships are used. Grouped by origin:</p>
+
+        <div class="feature-groups">
+            <div class="feature-group">
+                <h4>Pricing &amp; release</h4>
+                <ul class="chips">
+                    <li>price</li><li>initialprice</li><li>is_free</li>
+                    <li>release_month</li>
+                </ul>
+            </div>
+            <div class="feature-group">
+                <h4>Genre flags (one-hot)</h4>
+                <ul class="chips">
+                    <li>Action</li><li>Adventure</li><li>RPG</li><li>Strategy</li>
+                    <li>Simulation</li><li>Indie</li><li>Sports</li><li>Racing</li>
+                </ul>
+            </div>
+            <div class="feature-group">
+                <h4>Store-page richness</h4>
+                <ul class="chips">
+                    <li>screenshot_count</li><li>has_trailer</li><li>trailer_count</li>
+                    <li>about_length</li><li>has_detailed_desc</li>
+                    <li>has_website</li><li>has_support_email</li>
+                </ul>
+            </div>
+            <div class="feature-group">
+                <h4>Platform &amp; localization</h4>
+                <ul class="chips">
+                    <li>platform_count</li>
+                    <li>supported_languages_count</li>
+                    <li>full_audio_languages_count</li>
+                    <li>required_age</li>
+                </ul>
+            </div>
+            <div class="feature-group">
+                <h4>Studio signals</h4>
+                <ul class="chips">
+                    <li>developer_count</li><li>publisher_count</li>
+                    <li>has_publisher</li><li>is_solo_dev</li>
+                </ul>
+            </div>
+            <div class="feature-group">
+                <h4>Steam ecosystem flags</h4>
+                <ul class="chips">
+                    <li>is_multiplayer</li><li>has_achievements</li>
+                    <li>has_trading_cards</li><li>has_workshop</li>
+                    <li>has_cloud_save</li><li>has_controller_support</li>
+                    <li>has_vr_support</li><li>has_in_app_purchases</li>
+                    <li>has_family_sharing</li>
+                </ul>
+            </div>
+            <div class="feature-group">
+                <h4>Categories, tags &amp; packaging</h4>
+                <ul class="chips">
+                    <li>category_count</li><li>tag_count</li>
+                    <li>has_multiplayer_tag</li>
+                    <li>top_tag_votes_total</li><li>top_tag_votes_mean</li>
+                    <li>dlc_count</li><li>package_count</li>
+                    <li>sku_count</li><li>achievement_count</li>
+                </ul>
+            </div>
+            <div class="feature-group">
+                <h4>Engineered composite scores</h4>
+                <ul class="chips">
+                    <li>store_page_score</li><li>platform_reach</li>
+                    <li>marketing_score</li><li>publisher_backing</li>
+                    <li>localization_score</li><li>steam_integration</li>
+                    <li>is_mature_content</li>
+                </ul>
+            </div>
+        </div>
+
+        <details class="excluded-block">
+            <summary>Columns explicitly excluded (post-launch / leakage)</summary>
+            <ul class="chips danger">
+                <li>positive</li><li>negative</li><li>total_reviews</li>
+                <li>positive_ratio</li><li>average_forever</li>
+                <li>average_2weeks</li><li>median_forever</li>
+                <li>median_2weeks</li><li>ccu</li><li>owners</li>
+                <li>log_owners</li><li>json_price_raw</li><li>appid</li>
+            </ul>
+        </details>
+    </section>
+
+    <!-- ===================== SCRIPTS ===================== -->
+    <section class="dataset-section">
+        <h2>5 · Reproducibility</h2>
+        <p class="section-intro">The full pipeline lives in two Python scripts.
+        Output is the file the model trains on:</p>
+        <div class="script-list">
+            <div class="script-card">
+                <code>enrich_prelaunch.py</code>
+                <span>Merges SteamSpy CSV with Steam API JSON and engineers composite features.</span>
+            </div>
+            <div class="script-card">
+                <code>train_prelaunch_model.py</code>
+                <span>Selects pre-launch features, builds the ordinal target, trains the stacked ensemble.</span>
+            </div>
+            <div class="script-card output">
+                <code>steam_10k_prelaunch.csv</code>
+                <span>Final 10,000 × 71 training file consumed by the model.</span>
+            </div>
+        </div>
+    </section>
+
+</div>
+{% endblock %}

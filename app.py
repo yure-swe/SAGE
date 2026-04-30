@@ -212,6 +212,11 @@ def compute_derived_features(form_data: dict) -> dict:
 # ROUTES
 # =============================================================================
 
+@app.route("/dataset")
+def dataset():
+    return render_template("dataset.html")
+
+
 @app.route("/", methods=["GET", "POST"])
 def dashboard():
     """Main dashboard: form on left/top, results on right/bottom."""
