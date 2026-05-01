@@ -55,8 +55,10 @@
 
                             {% elif field.type == 'toggle' %}
                                 <div class="toggle-field">
-                                    <input type="checkbox" id="{{ field.name }}" name="{{ field.name }}" value="1"
-                                           {% if form_data and form_data.get(field.name, field.default)|int == 1 %}checked{% endif %}>
+                                  <input type="checkbox" id="{{ field.name }}" name="{{ field.name }}" value="1"
+                                      {% if form_data %}
+                                          {% if form_data.get(field.name, field.default)|int == 1 %}checked{% endif %}
+                                          {% elif field.default|int == 1 %}checked{% endif %}>
                                 </div>
                             {% endif %}
                         </div>
