@@ -3,7 +3,15 @@
 {% block title %}Dashboard — SAGE Game Success Predictor{% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
+  <div class="dashboard-container">
+  {% if validation_errors %}
+   <div class="alert alert-danger" role="alert">
+     <strong>Please fix the following:</strong>
+     <ul style="margin:0.5rem 0 0 1rem">
+        {% for err in validation_errors %}<li>{{ err }}</li>{% endfor %}
+      </ul>
+    </div>
+{% endif %}
 
     <!-- ===================== FORM PANEL ===================== -->
     <section class="form-panel" aria-label="Game features">

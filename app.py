@@ -12,11 +12,33 @@
 #   GET      /health     → server health check
 # =============================================================================
 
+import logging
+import os
+from logging.handlers import RotatingFileHandler
+
 from flask import Flask, render_template, request, jsonify
 from predictor   import predict, ALL_FEATURES, CLASS_RANGES, N_CLASSES
 from recommender import get_recommendations
+from validation  import validate_form_data, FIELD_SPECS
 
 app = Flask(__name__)
+
+# ── Hardening: cap request size (prevents memory-exhaustion attacks) ─────────
+app.config["MAX_CONTENT_LENGTH"] = 256 * 1024   # 256 KB — way more than we need
+
+# ── Logging: rotating file + stderr ──────────────────────────────────────────
+LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+_handler = RotatingFileHandler(
+    os.path.join(LOG_DIR, "sage.log"),
+    maxBytes=1_000_000,
+    backupCount=3,
+)
+_handler.setFormatter(logging.Formatter(
+    "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+))
+app.logger.addHandler(_handler)
+app.logger.setLevel(logging.INFO)
 
 # ── Feature metadata for the HTML form ───────────────────────────────────────
 # Groups features into logical sections for the UI
@@ -171,32 +193,12 @@ def compute_derived_features(form_data: dict) -> dict:
     d["store_page_score"] = (
         min(f("screenshot_count"), 10) / 10 * 0.30 +
         f("has_trailer")                          * 0.25 +
-        f("has_detailed_desc")                    * 0.15 +
-        min(f("supported_languages_count"), 20) / 20 * 0.15 +
+        f("has_detailed_desc")                    * 0.25 +
         f("has_website")                          * 0.10 +
-        f("has_support_email")                    * 0.05
+        f("has_support_email")                    * 0.10
     )
 
-    d["platform_reach"]    = platform_count / 3.0
-    d["is_mature_content"] = 1 if f("required_age") >= 18 else 0
-
-    d["marketing_score"] = (
-        f("has_trailer")                         * 0.40 +
-        f("has_website")                         * 0.30 +
-        min(f("trailer_count"), 5) / 5           * 0.30
-    )
-
-    d["publisher_backing"] = (
-        f("has_publisher")                       * 0.60 +
-        min(f("publisher_count"), 3) / 3         * 0.40
-    )
-
-    d["localization_score"] = (
-        min(f("supported_languages_count"), 20) / 20 * 0.70 +
-        min(f("full_audio_languages_count"), 10) / 10 * 0.30
-    )
-
-    d["steam_integration"] = (
+    d["steam_features_score"] = (
         f("has_achievements")       * 0.25 +
         f("has_trading_cards")      * 0.15 +
         f("has_cloud_save")         * 0.15 +
@@ -206,6 +208,49 @@ def compute_derived_features(form_data: dict) -> dict:
     )
 
     return d
+
+
+# =============================================================================
+# ERROR HANDLERS  — return JSON for /api/* and friendly HTML elsewhere
+# =============================================================================
+def _wants_json() -> bool:
+    return (
+        request.path.startswith("/api/")
+        or request.is_json
+        or "application/json" in (request.headers.get("Accept") or "")
+    )
+
+@app.errorhandler(400)
+def _bad_request(e):
+    msg = getattr(e, "description", "Bad request")
+    if _wants_json():
+        return jsonify({"error": "bad_request", "message": msg}), 400
+    return render_template("dashboard.html",
+                           form_sections=FORM_SECTIONS, result=None,
+                           recommendations=None, form_data={},
+                           class_ranges=CLASS_RANGES, show_results=False,
+                           validation_errors=[msg]), 400
+
+@app.errorhandler(413)
+def _payload_too_large(e):
+    if _wants_json():
+        return jsonify({"error": "payload_too_large",
+                        "message": "Request body exceeds 256 KB."}), 413
+    return ("Request payload too large.", 413)
+
+@app.errorhandler(404)
+def _not_found(e):
+    if _wants_json():
+        return jsonify({"error": "not_found"}), 404
+    return ("Page not found.", 404)
+
+@app.errorhandler(500)
+def _server_error(e):
+    app.logger.exception("Unhandled server error")
+    if _wants_json():
+        return jsonify({"error": "internal_error",
+                        "message": "An unexpected error occurred."}), 500
+    return ("Internal server error.", 500)
 
 
 # =============================================================================
@@ -220,19 +265,18 @@ def dataset():
 @app.route("/", methods=["GET", "POST"])
 def dashboard():
     """Main dashboard: form on left/top, results on right/bottom."""
-    
-    # Initialize default variables to avoid NameErrors
+
     form_data = {}
     show_results = False
     result = None
     recs = None
+    validation_errors = []
 
     if request.method == "POST":
         # 1. Collect form fields
-        form_data = request.form.to_dict()
-        show_results = True
+        raw_form = request.form.to_dict()
 
-        # 2. Handle unchecked toggles
+        # 2. Default unchecked toggles to 0 BEFORE validation
         all_toggle_fields = [
             "is_free", "platform_windows", "platform_mac", "platform_linux",
             "has_trailer", "has_detailed_desc", "has_website", "has_support_email",
@@ -244,19 +288,49 @@ def dashboard():
             "Simulation", "Indie", "Sports", "Racing",
         ]
         for field in all_toggle_fields:
-            if field not in form_data:
-                form_data[field] = 0
+            if field not in raw_form:
+                raw_form[field] = 0
 
-        # 3. Compute derived/composite features
+        # 3. Validate inputs server-side
+        cleaned, validation_errors = validate_form_data(raw_form, strict=False)
+
+        if validation_errors:
+            app.logger.info("Validation failed: %s", validation_errors)
+            # Re-render the form with errors; keep user's submitted values
+            return render_template(
+                "dashboard.html",
+                form_sections=FORM_SECTIONS,
+                result=None,
+                recommendations=None,
+                form_data=raw_form,
+                class_ranges=CLASS_RANGES,
+                show_results=False,
+                validation_errors=validation_errors,
+            ), 400
+
+        form_data = cleaned
+        show_results = True
+
+        # 4. Compute derived/composite features
         form_data = compute_derived_features(form_data)
 
-        # 4. Run prediction
-        result = predict(form_data)
+        # 5. Run prediction (guarded)
+        try:
+            result = predict(form_data)
+            recs   = get_recommendations(form_data, result["predicted_class"])
+        except Exception:
+            app.logger.exception("Prediction pipeline failed")
+            return render_template(
+                "dashboard.html",
+                form_sections=FORM_SECTIONS,
+                result=None,
+                recommendations=None,
+                form_data=raw_form,
+                class_ranges=CLASS_RANGES,
+                show_results=False,
+                validation_errors=["Prediction failed. Please try again."],
+            ), 500
 
-        # 5. Generate recommendations
-        recs = get_recommendations(form_data, result["predicted_class"])
-        
-    # Return the template (Indented to be outside the 'if' block)
     return render_template(
         "dashboard.html",
         form_sections=FORM_SECTIONS,
@@ -265,9 +339,9 @@ def dashboard():
         form_data=form_data,
         class_ranges=CLASS_RANGES,
         show_results=show_results,
+        validation_errors=validation_errors,
     )
 
-    
 
 @app.route("/model-info", methods=["GET"])
 def model_info():
@@ -303,13 +377,47 @@ def api_predict():
     Returns prediction + recommendations as JSON.
     """
     if not request.is_json:
-        return jsonify({"error": "Content-Type must be application/json"}), 400
+        return jsonify({
+            "error": "invalid_content_type",
+            "message": "Content-Type must be application/json",
+        }), 400
 
-    form_data = request.get_json()
-    form_data = compute_derived_features(form_data)
+    try:
+        payload = request.get_json(silent=True)
+    except Exception:
+        payload = None
 
-    result = predict(form_data)
-    recs   = get_recommendations(form_data, result["predicted_class"])
+    if payload is None:
+        return jsonify({
+            "error": "invalid_json",
+            "message": "Request body is not valid JSON.",
+        }), 400
+
+    if not isinstance(payload, dict):
+        return jsonify({
+            "error": "invalid_payload",
+            "message": "JSON body must be an object of feature values.",
+        }), 400
+
+    # Validate
+    cleaned, errors = validate_form_data(payload, strict=False)
+    if errors:
+        return jsonify({
+            "error": "validation_failed",
+            "messages": errors,
+        }), 422
+
+    cleaned = compute_derived_features(cleaned)
+
+    try:
+        result = predict(cleaned)
+        recs   = get_recommendations(cleaned, result["predicted_class"])
+    except Exception:
+        app.logger.exception("API prediction failed")
+        return jsonify({
+            "error": "prediction_failed",
+            "message": "Model pipeline error.",
+        }), 500
 
     return jsonify({
         "prediction":      result,
@@ -325,6 +433,7 @@ def health():
         "models":   "loaded",
         "features": len(ALL_FEATURES),
         "classes":  N_CLASSES,
+        "validated_fields": len(FIELD_SPECS),
     }), 200
 
 

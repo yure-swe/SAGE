@@ -41,21 +41,18 @@ CLASS_RANGES = {
     5: {"label": "≥750K",  "range": "750,000+ owners",                  "tier": "Breakout Hit"},
 }
 
+# Safe fallback metadata if predicted_class is somehow out of bounds.
+_UNKNOWN_CLASS = {"label": "Unknown", "range": "Unknown", "tier": "Unknown"}
+
 
 def build_feature_vector(form_data: dict) -> pd.DataFrame:
     """
-    Convert raw form input (strings/ints from HTML form) into a
-    properly ordered and scaled feature vector ready for prediction.
+    Convert raw form input into a properly ordered and scaled feature vector
+    ready for prediction.
 
-    Parameters
-    ----------
-    form_data : dict
-        Keys must match ALL_FEATURES names.
-        Values can be strings (will be cast to float).
-
-    Returns
-    -------
-    pd.DataFrame  — scaled, shape (1, n_features)
+    NOTE: This still defensively coerces to 0.0 as a *last-resort* safety net,
+    but real validation now happens upstream in validation.py before this
+    function is ever called.
     """
     row = {}
     for feat in ALL_FEATURES:
@@ -79,36 +76,34 @@ def predict(form_data: dict) -> dict:
     """
     Run the full stacked ensemble prediction pipeline.
 
-    Returns
-    -------
-    dict with keys:
-        predicted_class   int
-        predicted_label   str   e.g. "≥750K"
-        predicted_range   str   e.g. "750,000+ owners"
-        predicted_tier    str   e.g. "Breakout Hit"
-        confidence        float  0–100 (%)
-        probabilities     list   per-class probabilities (0–1)
-        class_labels      list   label for each class
-        base_probs        dict   RF/GB/XGB individual probs for display
+    Raises
+    ------
+    RuntimeError
+        If any stage of the pipeline fails. Callers (app.py) should catch
+        this and surface a friendly error to the user.
     """
-    # 1. Build and scale feature vector
-    X_scaled = build_feature_vector(form_data)
+    try:
+        # 1. Build and scale feature vector
+        X_scaled = build_feature_vector(form_data)
 
-    # 2. Get base model probabilities
-    rf_probs  = rf_model.predict_proba(X_scaled)   # shape (1, N_CLASSES)
-    gb_probs  = gb_model.predict_proba(X_scaled)
-    xgb_probs = xgb_model.predict_proba(X_scaled)
+        # 2. Get base model probabilities
+        rf_probs  = rf_model.predict_proba(X_scaled)
+        gb_probs  = gb_model.predict_proba(X_scaled)
+        xgb_probs = xgb_model.predict_proba(X_scaled)
 
-    # 3. Stack into meta-features (same format as training OOF)
-    meta_features = np.hstack([rf_probs, gb_probs, xgb_probs])  # (1, N_CLASSES*3)
+        # 3. Stack into meta-features
+        meta_features = np.hstack([rf_probs, gb_probs, xgb_probs])
 
-    # 4. Meta-learner final prediction
-    final_probs = meta_model.predict_proba(meta_features)[0]    # (N_CLASSES,)
-    predicted_class = int(np.argmax(final_probs))
-    confidence = float(final_probs[predicted_class]) * 100
+        # 4. Meta-learner final prediction
+        final_probs = meta_model.predict_proba(meta_features)[0]
+        predicted_class = int(np.argmax(final_probs))
+        confidence = float(final_probs[predicted_class]) * 100
+    except Exception as exc:
+        # Wrap any low-level numpy/sklearn error in a clean exception
+        raise RuntimeError(f"Prediction pipeline failure: {exc}") from exc
 
-    # 5. Build response
-    class_info = CLASS_RANGES[predicted_class]
+    # 5. Build response — guard CLASS_RANGES lookup
+    class_info = CLASS_RANGES.get(predicted_class, _UNKNOWN_CLASS)
 
     return {
         "predicted_class":  predicted_class,
@@ -117,8 +112,8 @@ def predict(form_data: dict) -> dict:
         "predicted_tier":   class_info["tier"],
         "confidence":       round(confidence, 1),
         "probabilities":    [round(float(p) * 100, 1) for p in final_probs],
-        "class_labels":     [CLASS_RANGES[i]["label"] for i in range(N_CLASSES)],
-        "class_tiers":      [CLASS_RANGES[i]["tier"]  for i in range(N_CLASSES)],
+        "class_labels":     [CLASS_RANGES.get(i, _UNKNOWN_CLASS)["label"] for i in range(N_CLASSES)],
+        "class_tiers":      [CLASS_RANGES.get(i, _UNKNOWN_CLASS)["tier"]  for i in range(N_CLASSES)],
         "base_probs": {
             "Random Forest":      [round(float(p) * 100, 1) for p in rf_probs[0]],
             "Gradient Boosting":  [round(float(p) * 100, 1) for p in gb_probs[0]],
