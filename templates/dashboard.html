@@ -4,15 +4,7 @@
 
 {% block content %}
   <div class="dashboard-container">
-  {% if validation_errors %}
-   <div class="alert alert-danger" role="alert">
-     <strong>Please fix the following:</strong>
-     <ul style="margin:0.5rem 0 0 1rem">
-        {% for err in validation_errors %}<li>{{ err }}</li>{% endfor %}
-      </ul>
-    </div>
-{% endif %}
-
+ 
     <!-- ===================== FORM PANEL ===================== -->
     <section class="form-panel" aria-label="Game features">
         <h2>
@@ -20,6 +12,14 @@
             Enter Game Features
         </h2>
         <p class="form-subtitle">Fill in the pre-launch attributes of your game and we'll predict its owner tier.</p>
+         {% if validation_errors %}
+         <div class="alert alert-danger" role="alert">
+           <strong>Please fix the following:</strong>
+           <ul style="margin:0.5rem 0 0 1rem">
+           {% for err in validation_errors %}<li>{{ err }}</li>{% endfor %}
+          </ul>
+         </div>
+         {% endif %}
 
         <form method="POST" action="/" id="prediction-form" novalidate>
             {% for section in form_sections %}

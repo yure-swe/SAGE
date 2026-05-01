@@ -291,6 +291,13 @@ def dashboard():
             if field not in raw_form:
                 raw_form[field] = 0
 
+        # 2b. Enforce coupling: has_detailed_desc is derived from about_length (>500)
+        try:
+            _about_len = int(float(raw_form.get("about_length", 0) or 0))
+        except (TypeError, ValueError):
+            _about_len = 0
+        raw_form["has_detailed_desc"] = 1 if _about_len > 500 else 0
+
         # 3. Validate inputs server-side
         cleaned, validation_errors = validate_form_data(raw_form, strict=False)
 

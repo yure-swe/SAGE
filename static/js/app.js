@@ -148,7 +148,7 @@
       if (priceInput) {
         const price = parseFloat(priceInput.value);
         if (price < 0 || price > 200) {
-          alert("Price must be between 0 and 200 USD");
+          showInlineErrors(["Price must be between 0 and 200 USD"], ["price"]);
           return;
         }
       }
@@ -157,14 +157,19 @@
 
       const formData = new FormData(form);
       fetch("/", { method: "POST", body: formData })
-        .then((r) => r.text())
-        .then((html) => {
+        .then((r) => r.text().then((html) => ({ ok: r.ok, status: r.status, html })))
+        .then(({ ok, html }) => {
           const doc = new DOMParser().parseFromString(html, "text/html");
           const newForm = doc.querySelector(".form-panel");
           const newResults = doc.querySelector(".results-panel");
+          const newAlertSlot = doc.querySelector("#validation-alert-slot");
 
           const formPanel = document.querySelector(".form-panel");
           if (newForm && formPanel) formPanel.innerHTML = newForm.innerHTML;
+
+          // Swap validation alert slot so server-side errors are visible
+          const slot = document.querySelector("#validation-alert-slot");
+          if (slot && newAlertSlot) slot.innerHTML = newAlertSlot.innerHTML;
 
           let resultsPanel = document.querySelector(".results-panel");
           if (!resultsPanel) {
@@ -177,16 +182,20 @@
           // Re-bind dynamic content
           bindFormSections(formPanel);
           bindForm();
+          bindDetailedDescCoupling();
+          bindNumericGuards();
           animateResults(resultsPanel);
           bindLightbox(document);
 
-          if (window.matchMedia("(max-width: 1024px)").matches) {
+          if (!ok && slot) {
+            slot.scrollIntoView({ behavior: "smooth", block: "start" });
+          } else if (window.matchMedia("(max-width: 1024px)").matches) {
             resultsPanel.scrollIntoView({ behavior: "smooth", block: "start" });
           }
         })
         .catch((err) => {
           console.error("Prediction error:", err);
-          alert("Something went wrong. Please try again.");
+          showInlineErrors(["Something went wrong. Please try again."], []);
         })
         .finally(() => {
           const btn = document.querySelector('#prediction-form [type="submit"]');
@@ -246,12 +255,79 @@
     map.forEach((_, el) => obs.observe(el));
   }
 
+  // ── Reliability helpers ──────────────────────────────────────────────────
+  function showInlineErrors(messages, fieldNames) {
+    const slot = document.querySelector("#validation-alert-slot");
+    if (slot) {
+      slot.innerHTML =
+        '<div class="alert alert-danger" role="alert">' +
+        '<strong>Please fix the following:</strong>' +
+        '<ul style="margin:0.5rem 0 0 1rem">' +
+        messages.map((m) => '<li>' + m + '</li>').join("") +
+        '</ul></div>';
+      slot.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    document.querySelectorAll(".field-error").forEach((el) => el.classList.remove("field-error"));
+    (fieldNames || []).forEach((n) => {
+      const f = document.getElementById(n);
+      if (f) f.classList.add("field-error");
+    });
+  }
+
+  function bindDetailedDescCoupling() {
+    const about = document.getElementById("about_length");
+    const detailed = document.getElementById("has_detailed_desc");
+    if (!about || !detailed) return;
+    const sync = () => {
+      const v = parseInt(about.value, 10);
+      const on = Number.isFinite(v) && v > 500;
+      detailed.checked = on;
+      detailed.disabled = true;
+      detailed.title = "Auto-derived from Description Length (>500 chars)";
+    };
+    about.addEventListener("input", sync);
+    about.addEventListener("change", sync);
+    sync();
+  }
+
+  function bindNumericGuards() {
+    document.querySelectorAll('#prediction-form input[type="number"]').forEach((input) => {
+      if (input.dataset.numericGuardBound === "1") return;
+      input.dataset.numericGuardBound = "1";
+      const step = parseFloat(input.getAttribute("step") || "1");
+      const allowDecimal = Number.isFinite(step) && step > 0 && step < 1;
+      const allowedKeys = new Set([
+        "Backspace", "Delete", "Tab", "Escape", "Enter",
+        "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End",
+      ]);
+      input.addEventListener("keydown", (e) => {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (allowedKeys.has(e.key)) return;
+        if (/^[0-9]$/.test(e.key)) return;
+        if (allowDecimal && e.key === "." && !input.value.includes(".")) return;
+        e.preventDefault();
+      });
+      input.addEventListener("paste", (e) => {
+        const txt = (e.clipboardData || window.clipboardData).getData("text");
+        const re = allowDecimal ? /^\d*\.?\d*$/ : /^\d+$/;
+        if (!re.test(txt)) e.preventDefault();
+      });
+      input.addEventListener("input", () => {
+        const re = allowDecimal ? /[^0-9.]/g : /[^0-9]/g;
+        const cleaned = input.value.replace(re, "");
+        if (cleaned !== input.value) input.value = cleaned;
+      });
+    });
+  }
+
   // ── Init ─────────────────────────────────────────────────────────────────
   document.addEventListener("DOMContentLoaded", function () {
     bindThemeToggle();
     bindSidebar();
     bindFormSections();
     bindForm();
+    bindDetailedDescCoupling();
+    bindNumericGuards();
     animateResults();
     bindLightbox();
     bindScrollspy();
