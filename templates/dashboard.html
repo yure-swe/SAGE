@@ -192,3 +192,97 @@
 
 </div>
 {% endblock %}
+
+{% block scripts %}
+{{ super() if super }}
+<script>
+  // CHANGED: free-to-play disables/zeros the price inputs;
+  //          solo-developer disables/forces developer_count = 1.
+  (function () {
+    function bindToggleControlsNumber(toggleId, numberIds, forcedValue) {
+      var toggle = document.getElementById(toggleId);
+      if (!toggle) return;
+      var inputs = numberIds
+        .map(function (id) { return document.getElementById(id); })
+        .filter(Boolean);
+
+      function sync() {
+        var on = toggle.checked;
+        inputs.forEach(function (input) {
+          if (on) {
+            input.dataset.prevValue = input.value;
+            input.value = forcedValue;
+            input.disabled = true;
+            input.style.opacity = "0.5";
+          } else {
+            input.disabled = false;
+            input.style.opacity = "";
+            if (input.dataset.prevValue !== undefined && input.value === String(forcedValue)) {
+              input.value = input.dataset.prevValue;
+            }
+          }
+        });
+      }
+      toggle.addEventListener("change", sync);
+      sync();
+      }
+    function bindToggleControlsNumberNot(toggleId, numberIds, forcedValue) {
+      var toggle = document.getElementById(toggleId);
+      if (!toggle) return;
+      var inputs = numberIds
+        .map(function (id) { return document.getElementById(id); })
+        .filter(Boolean);
+
+      function sync() {
+        var off = !toggle.checked;
+        inputs.forEach(function (input) {
+          if (off) {
+            input.dataset.prevValue = input.value;
+            input.value = forcedValue;
+            input.disabled = true;
+            input.style.opacity = "0.5";
+          } else {
+            input.disabled = false;
+            input.style.opacity = "";
+            if (input.dataset.prevValue !== undefined && input.value === String(forcedValue)) {
+              input.value = input.dataset.prevValue;
+            }
+          }
+        });
+      }
+
+
+      toggle.addEventListener("change", sync);
+      sync();
+    }
+
+    
+
+
+// Has Publisher → disables publisher_count when off
+const hasPub = document.querySelector('[name="has_publisher"]');
+const pubCount = document.querySelector('[name="publisher_count"]');
+
+function syncPublisher() {
+  if (!hasPub || !pubCount) return;
+
+  if (!hasPub.checked) {
+    pubCount.value = 0;
+    pubCount.disabled = true;
+    pubCount.style.opacity = "0.5";   // ← add this
+  } else {
+    pubCount.disabled = false;
+    pubCount.style.opacity = "";      // ← reset
+    if (Number(pubCount.value) < 1) pubCount.value = 1;
+  }
+}
+
+hasPub?.addEventListener('change', syncPublisher);
+syncPublisher(); // run once on page load
+
+
+    bindToggleControlsNumber("is_free", ["price", "initialprice"], 0);
+    bindToggleControlsNumber("is_solo_dev", ["developer_count"], 1);
+  })();
+</script>
+{% endblock %}

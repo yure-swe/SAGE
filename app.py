@@ -65,9 +65,9 @@ FORM_SECTIONS = [
     {
         "title": "💰 Pricing",
         "fields": [
-            {"name": "price", "label": "Price (USD)", "type": "number", "default": 9.99, "min": 0, "max": 200, "step": 0.01},
-            {"name": "initialprice", "label": "Initial Price (USD)", "type": "number", "default": 9.99, "min": 0, "max": 200, "step": 0.01},
             {"name": "is_free", "label": "Free to Play?", "type": "toggle", "default": 0},
+            {"name": "initialprice", "label": "Initial Price (USD)", "type": "number", "default": 9.99, "min": 0, "max": 200, "step": 0.01},
+            {"name": "price", "label": "Price (USD)", "type": "number", "default": 9.99, "min": 0, "max": 200, "step": 0.01},
         ]
     },
     {
@@ -114,7 +114,8 @@ FORM_SECTIONS = [
         "fields": [
             {"name": "screenshot_count", "label": "Number of Screenshots", "type": "number", "default": 5, "min": 0, "max": 20, "step": 1},
             {"name": "has_trailer", "label": "Has Trailer?", "type": "toggle", "default": 0},
-            {"name": "trailer_count", "label": "Number of Trailers", "type": "number", "default": 0, "min": 0, "max": 10, "step": 1},
+            # CHANGED: trailer_count is now auto-derived from has_trailer (1 if toggled on, else 0)
+            {"name": "trailer_count", "label": "Number of Trailers", "type": "number", "default": 0, "min": 0, "max": 10, "step": 1, "hidden": True},
             # CHANGED: added hint key
             {"name": "about_length", "label": "Description Length (chars)", "type": "number", "default": 500, "min": 0, "max": 5000, "step": 10,
              "hint": "Enter more than 500 chars to qualify as a detailed description"},
@@ -127,12 +128,15 @@ FORM_SECTIONS = [
     {
         "title": "🏢 Developer / Publisher",
         "fields": [
-            {"name": "developer_count", "label": "Number of Developers", "type": "number", "default": 1, "min": 1, "max": 20, "step": 1},
-            {"name": "publisher_count", "label": "Number of Publishers", "type": "number", "default": 0, "min": 0, "max": 10, "step": 1},
-            {"name": "has_publisher", "label": "Has Publisher?", "type": "toggle", "default": 0},
             {"name": "is_solo_dev", "label": "Solo Developer?", "type": "toggle", "default": 1},
+            {"name": "developer_count", "label": "Number of Developers", "type": "number", "default": 1, "min": 1, "max": 20, "step": 1},
+                        # CHANGED: has_publisher hidden — always assumed present (default 1)
+            {"name": "has_publisher", "label": "Has Publisher?", "type": "toggle", "default": 1},
+            {"name": "publisher_count", "label": "Number of Publishers", "type": "number", "default": 1, "min": 0, "max": 10, "step": 1},
+
             {"name": "required_age", "label": "Required Age (0=none)", "type": "number", "default": 0, "min": 0, "max": 18, "step": 1},
-            {"name": "is_mature_content","label": "Mature Content (18+)?", "type": "toggle", "default": 0},
+            # CHANGED: mature content hidden — always passed as 0
+            {"name": "is_mature_content","label": "Mature Content (18+)?", "type": "toggle", "default": 0, "hidden": True},
         ]
     },
     {
@@ -154,7 +158,8 @@ FORM_SECTIONS = [
         "title": "🏷️ Tags & Community",
         "fields": [
             {"name": "tag_count", "label": "Number of Tags", "type": "number", "default": 5, "min": 0, "max": 20, "step": 1},
-            {"name": "has_multiplayer_tag", "label": "Has Multiplayer Tag?", "type": "toggle", "default": 0},
+            # CHANGED: has_multiplayer_tag hidden — auto-derived from is_multiplayer
+            {"name": "has_multiplayer_tag", "label": "Has Multiplayer Tag?", "type": "toggle", "default": 0, "hidden": True},
             {"name": "top_tag_votes_total", "label": "Top Tag Votes Total", "type": "number", "default": 500,"min": 0, "max": 5000, "step": 10},
             {"name": "top_tag_votes_mean", "label": "Top Tag Votes Mean", "type": "number", "default": 100,"min": 0, "max": 1000, "step": 10},
             {"name": "is_multiplayer", "label": "Multiplayer Game?", "type": "toggle", "default": 0},
@@ -207,6 +212,11 @@ def compute_derived_features(form_data: dict) -> dict:
         except (ValueError, TypeError):
             return float(default)
 
+    
+    if not form_data.get("has_publisher"):
+        form_data["publisher_count"] = 0
+
+
     # Platform count (auto-compute from toggles)
     platform_count = f("platform_windows") + f("platform_mac") + f("platform_linux")
     d["platform_count"] = platform_count
@@ -214,6 +224,21 @@ def compute_derived_features(form_data: dict) -> dict:
     # CHANGED: auto-derive has_detailed_desc from about_length
     d["has_detailed_desc"] = 1 if f("about_length") > 500 else 0
     app.logger.info("DEBUG: about_length=%s has_detailed_desc=%s", f("about_length"), d["has_detailed_desc"])
+
+    # CHANGED: auto-derive trailer_count from has_trailer toggle (1 if on, else 0)
+    d["trailer_count"] = 1 if f("has_trailer") >= 1 else 0
+
+    # CHANGED: auto-derive has_multiplayer_tag from is_multiplayer toggle
+    d["has_multiplayer_tag"] = 1 if f("is_multiplayer") >= 1 else 0
+
+    # CHANGED: hidden fields with fixed defaults
+    d["has_publisher"] = 1
+    d["is_mature_content"] = 0
+
+    # CHANGED: if free to play, force prices to 0
+    if f("is_free") >= 1:
+        d["price"] = 0
+        d["initialprice"] = 0
 
     # Derived composite scores — same formulas as enrich_prelaunch.py
     d["store_page_score"] = (
@@ -233,11 +258,29 @@ def compute_derived_features(form_data: dict) -> dict:
         f("has_family_sharing")    * 0.10
     )
 
-    # input is in usd but model was trained in usd CENTS so x 100
-    d["price"] = f("price") * 100
-    d["initialprice"] = f("initialprice") * 100
+    # CHANGED: keep d["price"] / d["initialprice"] in USD for re-render in the form.
+    # Cents conversion (model was trained on USD cents) is applied in build_model_input()
+    # right before predict(), without mutating the dict shown back to the user.
 
     return d
+
+
+def build_model_input(form_data: dict) -> dict:
+    """
+    Return a copy of form_data with price fields converted to USD cents
+    (the unit the model was trained on). The original form_data is left
+    untouched so the dashboard can re-render the user's USD inputs.
+    """
+    model_input = dict(form_data)
+    try:
+        model_input["price"] = float(form_data.get("price", 0)) * 100
+    except (ValueError, TypeError):
+        model_input["price"] = 0.0
+    try:
+        model_input["initialprice"] = float(form_data.get("initialprice", 0)) * 100
+    except (ValueError, TypeError):
+        model_input["initialprice"] = 0.0
+    return model_input
 
 
 # =============================================================================
@@ -350,8 +393,9 @@ def dashboard():
 
         # 5. Run prediction (guarded)
         try:
-            result = predict(form_data)
-            recs   = get_recommendations(form_data, result["predicted_class"])
+            model_input = build_model_input(form_data)
+            result = predict(model_input)
+            recs   = get_recommendations(model_input, result["predicted_class"])
         except Exception:
             app.logger.exception("Prediction pipeline failed")
             return render_template(
@@ -444,8 +488,9 @@ def api_predict():
     cleaned = compute_derived_features(cleaned)
 
     try:
-        result = predict(cleaned)
-        recs   = get_recommendations(cleaned, result["predicted_class"])
+        model_input = build_model_input(cleaned)
+        result = predict(model_input)
+        recs   = get_recommendations(model_input, result["predicted_class"])
     except Exception:
         app.logger.exception("API prediction failed")
         return jsonify({
