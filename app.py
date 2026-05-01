@@ -233,6 +233,10 @@ def compute_derived_features(form_data: dict) -> dict:
         f("has_family_sharing")    * 0.10
     )
 
+    # input is in usd but model was trained in usd CENTS so x 100
+    d["price"] = f("price") * 100
+    d["initialprice"] = f("initialprice") * 100
+
     return d
 
 
