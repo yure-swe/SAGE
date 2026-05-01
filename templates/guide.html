@@ -40,7 +40,6 @@
                 </thead>
                 <tbody>
                     {% for field in section.fields %}
-                    {% if not field.get('hidden') %}
                     <tr style="border-bottom:1px solid var(--border)">
                         <td style="padding:8px 10px"><code>{{ field.name }}</code></td>
                         <td style="padding:8px 10px">{{ field.label }}</td>
@@ -57,7 +56,6 @@
                             {% endif %}
                         </td>
                     </tr>
-                    {% endif %}
                     {% endfor %}
                 </tbody>
             </table>

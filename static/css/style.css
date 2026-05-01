@@ -136,6 +136,14 @@ ul, ol { list-style: none; }
 ::selection { background: var(--sage-200); color: var(--sage-900); }
 [data-theme="dark"] ::selection { background: var(--sage-700); color: var(--fg); }
 
+/* ── Field hint (auto-derived field helper text) ─────────────────────────── */
+.field-hint {
+  display: block;
+  font-size: 11.5px;
+  color: var(--fg-subtle);
+  line-height: 1.4;
+  margin-top: 2px;
+}
 /* ── Layout shell ───────────────────────────────────────────────────────── */
 .app-shell { min-height: 100vh; }
 

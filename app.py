@@ -4,12 +4,12 @@
 # Thesis: Ensemble Learning for Predicting Game Success (Pre-Launch Focus)
 #
 # Routes:
-#   GET/POST /           → main dashboard (form + results)
-#   GET      /model-info → model evaluation metrics
-#   GET      /guide      → user manual/documentation
-#   GET      /about      → methodology & thesis info
-#   POST     /api/predict → JSON endpoint
-#   GET      /health     → server health check
+# GET/POST / → main dashboard (form + results)
+# GET /model-info → model evaluation metrics
+# GET /guide → user manual/documentation
+# GET /about → methodology & thesis info
+# POST /api/predict → JSON endpoint
+# GET /health → server health check
 # =============================================================================
 
 import logging
@@ -17,18 +17,19 @@ import os
 from logging.handlers import RotatingFileHandler
 
 from flask import Flask, render_template, request, jsonify
-from predictor   import predict, ALL_FEATURES, CLASS_RANGES, N_CLASSES
+from predictor import predict, ALL_FEATURES, CLASS_RANGES, N_CLASSES
 from recommender import get_recommendations
-from validation  import validate_form_data, FIELD_SPECS
+from validation import validate_form_data, FIELD_SPECS
 
 app = Flask(__name__)
 
 # ── Hardening: cap request size (prevents memory-exhaustion attacks) ─────────
-app.config["MAX_CONTENT_LENGTH"] = 256 * 1024   # 256 KB — way more than we need
+app.config["MAX_CONTENT_LENGTH"] = 256 * 1024  # 256 KB — way more than we need
 
 # ── Logging: rotating file + stderr ──────────────────────────────────────────
 LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
+
 _handler = RotatingFileHandler(
     os.path.join(LOG_DIR, "sage.log"),
     maxBytes=1_000_000,
@@ -46,9 +47,9 @@ FORM_SECTIONS = [
     {
         "title": "💰 Pricing",
         "fields": [
-            {"name": "price",        "label": "Price (USD)",         "type": "number", "default": 9.99,  "min": 0,   "max": 200,  "step": 0.01},
-            {"name": "initialprice", "label": "Initial Price (USD)", "type": "number", "default": 9.99,  "min": 0,   "max": 200,  "step": 0.01},
-            {"name": "is_free",      "label": "Free to Play?",       "type": "toggle", "default": 0},
+            {"name": "price", "label": "Price (USD)", "type": "number", "default": 9.99, "min": 0, "max": 200, "step": 0.01},
+            {"name": "initialprice", "label": "Initial Price (USD)", "type": "number", "default": 9.99, "min": 0, "max": 200, "step": 0.01},
+            {"name": "is_free", "label": "Free to Play?", "type": "toggle", "default": 0},
         ]
     },
     {
@@ -63,97 +64,100 @@ FORM_SECTIONS = [
     {
         "title": "🎮 Genre",
         "fields": [
-            {"name": "Action",     "label": "Action",     "type": "toggle", "default": 0},
-            {"name": "Adventure",  "label": "Adventure",  "type": "toggle", "default": 0},
-            {"name": "RPG",        "label": "RPG",        "type": "toggle", "default": 0},
-            {"name": "Strategy",   "label": "Strategy",   "type": "toggle", "default": 0},
+            {"name": "Action", "label": "Action", "type": "toggle", "default": 0},
+            {"name": "Adventure", "label": "Adventure", "type": "toggle", "default": 0},
+            {"name": "RPG", "label": "RPG", "type": "toggle", "default": 0},
+            {"name": "Strategy", "label": "Strategy", "type": "toggle", "default": 0},
             {"name": "Simulation", "label": "Simulation", "type": "toggle", "default": 0},
-            {"name": "Indie",      "label": "Indie",      "type": "toggle", "default": 1},
-            {"name": "Sports",     "label": "Sports",     "type": "toggle", "default": 0},
-            {"name": "Racing",     "label": "Racing",     "type": "toggle", "default": 0},
+            {"name": "Indie", "label": "Indie", "type": "toggle", "default": 1},
+            {"name": "Sports", "label": "Sports", "type": "toggle", "default": 0},
+            {"name": "Racing", "label": "Racing", "type": "toggle", "default": 0},
         ]
     },
     {
         "title": "🖥️ Platform",
         "fields": [
             {"name": "platform_windows", "label": "Windows", "type": "toggle", "default": 1},
-            {"name": "platform_mac",     "label": "Mac",     "type": "toggle", "default": 0},
-            {"name": "platform_linux",   "label": "Linux",   "type": "toggle", "default": 0},
-            {"name": "platform_count",   "label": "Total Platforms (auto)", "type": "number",
+            {"name": "platform_mac", "label": "Mac", "type": "toggle", "default": 0},
+            {"name": "platform_linux", "label": "Linux", "type": "toggle", "default": 0},
+            {"name": "platform_count", "label": "Total Platforms (auto)", "type": "number",
              "default": 1, "min": 1, "max": 3, "step": 1, "hidden": True},
         ]
     },
     {
         "title": "🌍 Languages",
         "fields": [
-            {"name": "supported_languages_count",  "label": "Text Languages Supported",       "type": "number", "default": 1,  "min": 0, "max": 50, "step": 1},
-            {"name": "full_audio_languages_count", "label": "Full Audio Languages Supported", "type": "number", "default": 0,  "min": 0, "max": 20, "step": 1},
+            {"name": "supported_languages_count", "label": "Text Languages Supported", "type": "number", "default": 1, "min": 0, "max": 50, "step": 1},
+            {"name": "full_audio_languages_count", "label": "Full Audio Languages Supported", "type": "number", "default": 0, "min": 0, "max": 20, "step": 1},
         ]
     },
     {
         "title": "🏪 Store Page",
         "fields": [
-            {"name": "screenshot_count",  "label": "Number of Screenshots",  "type": "number", "default": 5,   "min": 0, "max": 20, "step": 1},
-            {"name": "has_trailer",       "label": "Has Trailer?",            "type": "toggle", "default": 0},
-            {"name": "trailer_count",     "label": "Number of Trailers",      "type": "number", "default": 0,   "min": 0, "max": 10, "step": 1},
-            {"name": "about_length",      "label": "Description Length (chars)", "type": "number", "default": 500, "min": 0, "max": 5000, "step": 10},
-            {"name": "has_detailed_desc", "label": "Detailed Description (>500 chars)?", "type": "toggle", "default": 0},
-            {"name": "has_website",       "label": "Has Official Website?",   "type": "toggle", "default": 0},
-            {"name": "has_support_email", "label": "Has Support Email?",      "type": "toggle", "default": 0},
+            {"name": "screenshot_count", "label": "Number of Screenshots", "type": "number", "default": 5, "min": 0, "max": 20, "step": 1},
+            {"name": "has_trailer", "label": "Has Trailer?", "type": "toggle", "default": 0},
+            {"name": "trailer_count", "label": "Number of Trailers", "type": "number", "default": 0, "min": 0, "max": 10, "step": 1},
+            # CHANGED: added hint key
+            {"name": "about_length", "label": "Description Length (chars)", "type": "number", "default": 500, "min": 0, "max": 5000, "step": 10,
+             "hint": "Enter more than 500 chars to qualify as a detailed description"},
+            # CHANGED: marked hidden — auto-derived in compute_derived_features()
+            {"name": "has_detailed_desc", "label": "Detailed Description (>500 chars in about_length)?", "type": "toggle", "default": 0, "hidden": True},
+            {"name": "has_website", "label": "Has Official Website?", "type": "toggle", "default": 0},
+            {"name": "has_support_email", "label": "Has Support Email?", "type": "toggle", "default": 0},
         ]
     },
     {
         "title": "🏢 Developer / Publisher",
         "fields": [
-            {"name": "developer_count",  "label": "Number of Developers",  "type": "number", "default": 1, "min": 1, "max": 20, "step": 1},
-            {"name": "publisher_count",  "label": "Number of Publishers",  "type": "number", "default": 0, "min": 0, "max": 10, "step": 1},
-            {"name": "has_publisher",    "label": "Has Publisher?",         "type": "toggle", "default": 0},
-            {"name": "is_solo_dev",      "label": "Solo Developer?",        "type": "toggle", "default": 1},
-            {"name": "required_age",     "label": "Required Age (0=none)",  "type": "number", "default": 0, "min": 0, "max": 18, "step": 1},
-            {"name": "is_mature_content","label": "Mature Content (18+)?",  "type": "toggle", "default": 0},
+            {"name": "developer_count", "label": "Number of Developers", "type": "number", "default": 1, "min": 1, "max": 20, "step": 1},
+            {"name": "publisher_count", "label": "Number of Publishers", "type": "number", "default": 0, "min": 0, "max": 10, "step": 1},
+            {"name": "has_publisher", "label": "Has Publisher?", "type": "toggle", "default": 0},
+            {"name": "is_solo_dev", "label": "Solo Developer?", "type": "toggle", "default": 1},
+            {"name": "required_age", "label": "Required Age (0=none)", "type": "number", "default": 0, "min": 0, "max": 18, "step": 1},
+            {"name": "is_mature_content","label": "Mature Content (18+)?", "type": "toggle", "default": 0},
         ]
     },
     {
         "title": "🏆 Steam Features",
         "fields": [
-            {"name": "has_achievements",       "label": "Steam Achievements?",    "type": "toggle", "default": 0},
-            {"name": "achievement_count",      "label": "Number of Achievements", "type": "number", "default": 0, "min": 0, "max": 500, "step": 1},
-            {"name": "has_trading_cards",      "label": "Steam Trading Cards?",   "type": "toggle", "default": 0},
-            {"name": "has_workshop",           "label": "Steam Workshop?",        "type": "toggle", "default": 0},
-            {"name": "has_cloud_save",         "label": "Steam Cloud Save?",      "type": "toggle", "default": 0},
-            {"name": "has_controller_support", "label": "Controller Support?",    "type": "toggle", "default": 0},
-            {"name": "has_vr_support",         "label": "VR Support?",            "type": "toggle", "default": 0},
-            {"name": "has_in_app_purchases",   "label": "In-App Purchases?",      "type": "toggle", "default": 0},
-            {"name": "has_family_sharing",     "label": "Family Sharing?",        "type": "toggle", "default": 0},
-            {"name": "category_count",         "label": "Total Steam Categories", "type": "number", "default": 3, "min": 0, "max": 15, "step": 1},
+            {"name": "has_achievements", "label": "Steam Achievements?", "type": "toggle", "default": 0},
+            {"name": "achievement_count", "label": "Number of Achievements", "type": "number", "default": 0, "min": 0, "max": 500, "step": 1},
+            {"name": "has_trading_cards", "label": "Steam Trading Cards?", "type": "toggle", "default": 0},
+            {"name": "has_workshop", "label": "Steam Workshop?", "type": "toggle", "default": 0},
+            {"name": "has_cloud_save", "label": "Steam Cloud Save?", "type": "toggle", "default": 0},
+            {"name": "has_controller_support", "label": "Controller Support?", "type": "toggle", "default": 0},
+            {"name": "has_vr_support", "label": "VR Support?", "type": "toggle", "default": 0},
+            {"name": "has_in_app_purchases", "label": "In-App Purchases?", "type": "toggle", "default": 0},
+            {"name": "has_family_sharing", "label": "Family Sharing?", "type": "toggle", "default": 0},
+            {"name": "category_count", "label": "Total Steam Categories", "type": "number", "default": 3, "min": 0, "max": 15, "step": 1},
         ]
     },
     {
         "title": "🏷️ Tags & Community",
         "fields": [
-            {"name": "tag_count",             "label": "Number of Tags",          "type": "number", "default": 5,  "min": 0, "max": 20,    "step": 1},
-            {"name": "has_multiplayer_tag",   "label": "Has Multiplayer Tag?",    "type": "toggle", "default": 0},
-            {"name": "top_tag_votes_total",   "label": "Top Tag Votes Total",     "type": "number", "default": 500,"min": 0, "max": 5000,  "step": 10},
-            {"name": "top_tag_votes_mean",    "label": "Top Tag Votes Mean",      "type": "number", "default": 100,"min": 0, "max": 1000,  "step": 10},
-            {"name": "is_multiplayer",        "label": "Multiplayer Game?",       "type": "toggle", "default": 0},
+            {"name": "tag_count", "label": "Number of Tags", "type": "number", "default": 5, "min": 0, "max": 20, "step": 1},
+            {"name": "has_multiplayer_tag", "label": "Has Multiplayer Tag?", "type": "toggle", "default": 0},
+            {"name": "top_tag_votes_total", "label": "Top Tag Votes Total", "type": "number", "default": 500,"min": 0, "max": 5000, "step": 10},
+            {"name": "top_tag_votes_mean", "label": "Top Tag Votes Mean", "type": "number", "default": 100,"min": 0, "max": 1000, "step": 10},
+            {"name": "is_multiplayer", "label": "Multiplayer Game?", "type": "toggle", "default": 0},
         ]
     },
     {
         "title": "📦 Packaging & DLC",
         "fields": [
-            {"name": "dlc_count",     "label": "DLC Count",       "type": "number", "default": 0, "min": 0, "max": 50, "step": 1},
-            {"name": "package_count", "label": "Package Count",   "type": "number", "default": 1, "min": 1, "max": 10, "step": 1},
-            {"name": "sku_count",     "label": "SKU Count",       "type": "number", "default": 1, "min": 1, "max": 20, "step": 1},
+            {"name": "dlc_count", "label": "DLC Count", "type": "number", "default": 0, "min": 0, "max": 50, "step": 1},
+            {"name": "package_count", "label": "Package Count", "type": "number", "default": 1, "min": 1, "max": 10, "step": 1},
+            {"name": "sku_count", "label": "SKU Count", "type": "number", "default": 1, "min": 1, "max": 20, "step": 1},
         ]
     },
 ]
 
 # ── Model performance metrics (for /model-info page) ─────────────────────────
 MODEL_METRICS = {
-    "ensemble": {"weighted_f1": 0.6211, "macro_f1": 0.2688, "accuracy": 0.7085},
-    "random_forest": {"weighted_f1": 0.6329, "macro_f1": 0.3019, "accuracy": 0.663},
+    "ensemble":          {"weighted_f1": 0.6211, "macro_f1": 0.2688, "accuracy": 0.7085},
+    "random_forest":     {"weighted_f1": 0.6329, "macro_f1": 0.3019, "accuracy": 0.663},
     "gradient_boosting": {"weighted_f1": 0.6244, "macro_f1": 0.2748, "accuracy": 0.702},
-    "xgboost": {"weighted_f1": 0.5869, "macro_f1": 0.2902, "accuracy": 0.552},
+    "xgboost":           {"weighted_f1": 0.5869, "macro_f1": 0.2902, "accuracy": 0.552},
 }
 
 DATASET_INFO = {
@@ -163,8 +167,8 @@ DATASET_INFO = {
     "n_classes": 6,
     "class_distribution": {
         "Class 0 (≤10K)": 4500,
-        "Class 1 (35K)": 2200,
-        "Class 2 (75K)": 1500,
+        "Class 1 (35K)":  2200,
+        "Class 2 (75K)":  1500,
         "Class 3 (150K)": 1000,
         "Class 4 (350K)": 504,
         "Class 5 (≥750K)": 296,
@@ -189,36 +193,42 @@ def compute_derived_features(form_data: dict) -> dict:
     platform_count = f("platform_windows") + f("platform_mac") + f("platform_linux")
     d["platform_count"] = platform_count
 
+    # CHANGED: auto-derive has_detailed_desc from about_length
+    d["has_detailed_desc"] = 1 if f("about_length") > 500 else 0
+    app.logger.info("DEBUG: about_length=%s has_detailed_desc=%s", f("about_length"), d["has_detailed_desc"])
+
     # Derived composite scores — same formulas as enrich_prelaunch.py
     d["store_page_score"] = (
         min(f("screenshot_count"), 10) / 10 * 0.30 +
-        f("has_trailer")                          * 0.25 +
-        f("has_detailed_desc")                    * 0.25 +
-        f("has_website")                          * 0.10 +
-        f("has_support_email")                    * 0.10
+        f("has_trailer")       * 0.25 +
+        f("has_detailed_desc") * 0.25 +
+        f("has_website")       * 0.10 +
+        f("has_support_email") * 0.10
     )
 
     d["steam_features_score"] = (
-        f("has_achievements")       * 0.25 +
-        f("has_trading_cards")      * 0.15 +
-        f("has_cloud_save")         * 0.15 +
-        f("has_workshop")           * 0.20 +
-        f("has_controller_support") * 0.15 +
-        f("has_family_sharing")     * 0.10
+        f("has_achievements")      * 0.25 +
+        f("has_trading_cards")     * 0.15 +
+        f("has_cloud_save")        * 0.15 +
+        f("has_workshop")          * 0.20 +
+        f("has_controller_support")* 0.15 +
+        f("has_family_sharing")    * 0.10
     )
 
     return d
 
 
 # =============================================================================
-# ERROR HANDLERS  — return JSON for /api/* and friendly HTML elsewhere
+# ERROR HANDLERS — return JSON for /api/* and friendly HTML elsewhere
 # =============================================================================
+
 def _wants_json() -> bool:
     return (
         request.path.startswith("/api/")
         or request.is_json
         or "application/json" in (request.headers.get("Accept") or "")
     )
+
 
 @app.errorhandler(400)
 def _bad_request(e):
@@ -231,6 +241,7 @@ def _bad_request(e):
                            class_ranges=CLASS_RANGES, show_results=False,
                            validation_errors=[msg]), 400
 
+
 @app.errorhandler(413)
 def _payload_too_large(e):
     if _wants_json():
@@ -238,11 +249,13 @@ def _payload_too_large(e):
                         "message": "Request body exceeds 256 KB."}), 413
     return ("Request payload too large.", 413)
 
+
 @app.errorhandler(404)
 def _not_found(e):
     if _wants_json():
         return jsonify({"error": "not_found"}), 404
     return ("Page not found.", 404)
+
 
 @app.errorhandler(500)
 def _server_error(e):
@@ -265,11 +278,10 @@ def dataset():
 @app.route("/", methods=["GET", "POST"])
 def dashboard():
     """Main dashboard: form on left/top, results on right/bottom."""
-
-    form_data = {}
-    show_results = False
-    result = None
-    recs = None
+    form_data         = {}
+    show_results      = False
+    result            = None
+    recs              = None
     validation_errors = []
 
     if request.method == "POST":
@@ -291,13 +303,6 @@ def dashboard():
             if field not in raw_form:
                 raw_form[field] = 0
 
-        # 2b. Enforce coupling: has_detailed_desc is derived from about_length (>500)
-        try:
-            _about_len = int(float(raw_form.get("about_length", 0) or 0))
-        except (TypeError, ValueError):
-            _about_len = 0
-        raw_form["has_detailed_desc"] = 1 if _about_len > 500 else 0
-
         # 3. Validate inputs server-side
         cleaned, validation_errors = validate_form_data(raw_form, strict=False)
 
@@ -315,7 +320,7 @@ def dashboard():
                 validation_errors=validation_errors,
             ), 400
 
-        form_data = cleaned
+        form_data    = cleaned
         show_results = True
 
         # 4. Compute derived/composite features
@@ -427,7 +432,7 @@ def api_predict():
         }), 500
 
     return jsonify({
-        "prediction":      result,
+        "prediction": result,
         "recommendations": recs,
     })
 
@@ -436,10 +441,10 @@ def api_predict():
 def health():
     """Health check endpoint."""
     return jsonify({
-        "status":   "ok",
-        "models":   "loaded",
+        "status": "ok",
+        "models": "loaded",
         "features": len(ALL_FEATURES),
-        "classes":  N_CLASSES,
+        "classes": N_CLASSES,
         "validated_fields": len(FIELD_SPECS),
     }), 200
 

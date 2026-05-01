@@ -3,184 +3,192 @@
 {% block title %}Dashboard — SAGE Game Success Predictor{% endblock %}
 
 {% block content %}
-  <div class="dashboard-container">
- 
-    <!-- ===================== FORM PANEL ===================== -->
-    <section class="form-panel" aria-label="Game features">
-        <h2>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--sage-600)"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Enter Game Features
-        </h2>
-        <p class="form-subtitle">Fill in the pre-launch attributes of your game and we'll predict its owner tier.</p>
-         {% if validation_errors %}
-         <div class="alert alert-danger" role="alert">
-           <strong>Please fix the following:</strong>
-           <ul style="margin:0.5rem 0 0 1rem">
-           {% for err in validation_errors %}<li>{{ err }}</li>{% endfor %}
-          </ul>
-         </div>
-         {% endif %}
 
-        <form method="POST" action="/" id="prediction-form" novalidate>
-            {% for section in form_sections %}
-            <div class="form-section"{% if loop.first %} data-kept="1"{% endif %}>
-                <h3>
-                    <span>{{ section.title }}</span>
-                </h3>
+<div class="dashboard-container">
 
-                <div class="fields-grid">
-                    {% for field in section.fields %}
-                        {% if not field.get('hidden') %}
-                        <div class="form-field">
-                            <label for="{{ field.name }}">{{ field.label }}</label>
+  <!-- ===================== FORM PANEL ===================== -->
+  <section class="form-panel" aria-label="Game features">
+    <h2>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--sage-600)"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Enter Game Features
+    </h2>
+    <p class="form-subtitle">Fill in the pre-launch attributes of your game and we'll predict its owner tier.</p>
 
-                            {% if field.type == 'number' %}
-                                <input type="number" id="{{ field.name }}" name="{{ field.name }}"
-                                       value="{{ form_data.get(field.name, field.default) if form_data else field.default }}"
-                                       min="{{ field.min }}" max="{{ field.max }}" step="{{ field.step }}">
-
-                            {% elif field.type == 'select' %}
-                                <select id="{{ field.name }}" name="{{ field.name }}">
-                                    {% for option in field.options %}
-                                        {% set value = option.split('=')[0] %}
-                                        {% set label = option.split('=')[1] %}
-                                        <option value="{{ value }}"
-                                            {% if form_data %}
-                                                {% if form_data.get(field.name, field.default)|string == value %}selected{% endif %}
-                                            {% elif field.default|string == value %}selected{% endif %}>
-                                            {{ label }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-
-                            {% elif field.type == 'toggle' %}
-                                <div class="toggle-field">
-                                  <input type="checkbox" id="{{ field.name }}" name="{{ field.name }}" value="1"
-                                      {% if form_data %}
-                                          {% if form_data.get(field.name, field.default)|int == 1 %}checked{% endif %}
-                                          {% elif field.default|int == 1 %}checked{% endif %}>
-                                </div>
-                            {% endif %}
-                        </div>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
-
-            <div class="form-actions">
-                <button type="reset" class="btn btn-ghost btn-reset">Reset</button>
-                <button type="submit" class="btn btn-primary btn-submit">
-                    <span class="spinner" aria-hidden="true"></span>
-                    <span>Predict Success</span>
-                </button>
-            </div>
-        </form>
-    </section>
-
-    <!-- ===================== RESULTS PANEL ===================== -->
-    {% if show_results %}
-    <section class="results-panel" aria-label="Prediction results">
-        <div class="result-card prediction-card">
-            <div class="predicted-tier">
-                <span class="tier-class">{{ result.predicted_label }}</span>
-                <span class="tier-name">{{ result.predicted_tier }}</span>
-                <span class="tier-range">{{ result.predicted_range }}</span>
-            </div>
-            <div class="confidence-ring" data-confidence="{{ result.confidence }}" aria-label="Confidence {{ result.confidence }} percent">
-                <svg viewBox="0 0 84 84">
-                    <circle class="track" cx="42" cy="42" r="36"/>
-                    <circle class="fill"  cx="42" cy="42" r="36"/>
-                </svg>
-                <span class="label">0%</span>
-            </div>
-            <!-- Legacy fallback so older AJAX swaps still expose the value -->
-            <div class="confidence-meter"><span>Confidence: {{ result.confidence }}%</span></div>
-        </div>
-
-        <div class="result-card">
-            <h3>Class Probabilities</h3>
-            <div class="probability-bars">
-                {% for i in range(result.probabilities|length) %}
-                {% set p = result.probabilities[i] %}
-                <div class="prob-item">
-                    <span class="prob-label">{{ result.class_labels[i] }}</span>
-                    <div class="prob-bar-container">
-                        <div class="prob-bar-fill" style="width: {{ p }}%"></div>
-                        <span class="prob-bar-value{% if p < 15 %} is-outside{% endif %}"
-                              style="left: {{ p }}%">{{ p }}%</span>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <div class="result-card">
-            <h3>Base Model Predictions</h3>
-            {% for model_name, probs in result.base_probs.items() %}
-            <details class="model-details">
-                <summary>{{ model_name }}</summary>
-                <div class="probability-bars small">
-                    {% for i in range(probs|length) %}
-                    {% set p = probs[i] %}
-                    <div class="prob-item">
-                        <span class="prob-label">{{ result.class_labels[i] }}</span>
-                        <div class="prob-bar-container">
-                            <div class="prob-bar-fill" style="width: {{ p }}%"></div>
-                            <span class="prob-bar-value{% if p < 15 %} is-outside{% endif %}"
-                                  style="left: {{ p }}%">{{ p }}%</span>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </details>
-            {% endfor %}
-        </div>
-
-        <div class="result-card">
-            <h3>Strengths</h3>
-            {% if recommendations.positives %}
-            <ul class="recommendation-list positive">
-                {% for rec in recommendations.positives %}
-                <li>
-                    <strong>{{ rec.label }}</strong>: {{ rec.message }}
-                    <span class="impact">Impact {{ rec.impact }}</span>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p>No significant positive signals detected.</p>
-            {% endif %}
-        </div>
-
-        <div class="result-card">
-            <h3>Improvement Suggestions</h3>
-            {% if recommendations.improvements %}
-            <ul class="recommendation-list improvements">
-                {% for rec in recommendations.improvements %}
-                <li>
-                    <strong>{{ rec.label }}</strong>: {{ rec.message }}
-                    <span class="impact">Impact {{ rec.impact }}</span>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p>No critical improvements needed.</p>
-            {% endif %}
-        </div>
-
-        <button onclick="window.location.href='/'" class="btn btn-ghost btn-reset" style="align-self:flex-end">Predict another game</button>
-    </section>
-    {% else %}
-    <section class="results-panel" aria-label="Prediction results">
-        <div class="empty-state">
-            <div class="empty-icon">
-                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--sage-600)"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>
-            </div>
-            <h2>Ready to predict</h2>
-            <p>Fill in the game features on the left, then click <strong>Predict Success</strong> to see results here.</p>
-        </div>
-    </section>
+    {% if validation_errors %}
+    <div class="alert alert-danger" role="alert">
+      <strong>Please fix the following:</strong>
+      <ul style="margin:0.5rem 0 0 1rem">
+        {% for err in validation_errors %}<li>{{ err }}</li>{% endfor %}
+      </ul>
+    </div>
     {% endif %}
+
+    <form method="POST" action="/" id="prediction-form" novalidate>
+      {% for section in form_sections %}
+      <div class="form-section"{% if loop.first %} data-kept="1"{% endif %}>
+        <h3>
+          <span>{{ section.title }}</span>
+        </h3>
+
+        <div class="fields-grid">
+          {% for field in section.fields %}
+            {% if not field.get('hidden') %}
+            <div class="form-field">
+              <label for="{{ field.name }}">{{ field.label }}</label>
+
+              {% if field.type == 'number' %}
+                <input type="number" id="{{ field.name }}" name="{{ field.name }}"
+                       value="{{ form_data.get(field.name, field.default) if form_data else field.default }}"
+                       min="{{ field.min }}" max="{{ field.max }}" step="{{ field.step }}">
+                {% if field.hint %}
+                <small class="field-hint">{{ field.hint }}</small>
+                {% endif %}
+
+              {% elif field.type == 'select' %}
+                <select id="{{ field.name }}" name="{{ field.name }}">
+                  {% for option in field.options %}
+                    {% set value = option.split('=')[0] %}
+                    {% set label = option.split('=')[1] %}
+                    <option value="{{ value }}"
+                      {% if form_data %}
+                        {% if form_data.get(field.name, field.default)|string == value %}selected{% endif %}
+                      {% elif field.default|string == value %}selected{% endif %}>
+                      {{ label }}
+                    </option>
+                  {% endfor %}
+                </select>
+
+              {% elif field.type == 'toggle' %}
+                <div class="toggle-field">
+                  <input type="checkbox" id="{{ field.name }}" name="{{ field.name }}" value="1"
+                    {% if form_data %}
+                      {% if form_data.get(field.name, field.default)|int == 1 %}checked{% endif %}
+                    {% elif field.default|int == 1 %}checked{% endif %}>
+                </div>
+              {% endif %}
+
+            </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+
+      <div class="form-actions">
+        <button type="reset" class="btn btn-ghost btn-reset">Reset</button>
+        <button type="submit" class="btn btn-primary btn-submit">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Predict Success</span>
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ===================== RESULTS PANEL ===================== -->
+  {% if show_results %}
+  <section class="results-panel" aria-label="Prediction results">
+    <div class="result-card prediction-card">
+      <div class="predicted-tier">
+        <span class="tier-class">{{ result.predicted_label }}</span>
+        <span class="tier-name">{{ result.predicted_tier }}</span>
+        <span class="tier-range">{{ result.predicted_range }}</span>
+      </div>
+      <div class="confidence-ring" data-confidence="{{ result.confidence }}" aria-label="Confidence {{ result.confidence }} percent">
+        <svg viewBox="0 0 84 84">
+          <circle class="track" cx="42" cy="42" r="36"/>
+          <circle class="fill"  cx="42" cy="42" r="36"/>
+        </svg>
+        <span class="label">0%</span>
+      </div>
+      <!-- Legacy fallback so older AJAX swaps still expose the value -->
+      <div class="confidence-meter"><span>Confidence: {{ result.confidence }}%</span></div>
+    </div>
+
+    <div class="result-card">
+      <h3>Class Probabilities</h3>
+      <div class="probability-bars">
+        {% for i in range(result.probabilities|length) %}
+        {% set p = result.probabilities[i] %}
+        <div class="prob-item">
+          <span class="prob-label">{{ result.class_labels[i] }}</span>
+          <div class="prob-bar-container">
+            <div class="prob-bar-fill" style="width: {{ p }}%"></div>
+            <span class="prob-bar-value{% if p < 15 %} is-outside{% endif %}"
+                  style="left: {{ p }}%">{{ p }}%</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="result-card">
+      <h3>Base Model Predictions</h3>
+      {% for model_name, probs in result.base_probs.items() %}
+      <details class="model-details">
+        <summary>{{ model_name }}</summary>
+        <div class="probability-bars small">
+          {% for i in range(probs|length) %}
+          {% set p = probs[i] %}
+          <div class="prob-item">
+            <span class="prob-label">{{ result.class_labels[i] }}</span>
+            <div class="prob-bar-container">
+              <div class="prob-bar-fill" style="width: {{ p }}%"></div>
+              <span class="prob-bar-value{% if p < 15 %} is-outside{% endif %}"
+                    style="left: {{ p }}%">{{ p }}%</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </details>
+      {% endfor %}
+    </div>
+
+    <div class="result-card">
+      <h3>Strengths</h3>
+      {% if recommendations.positives %}
+      <ul class="recommendation-list positive">
+        {% for rec in recommendations.positives %}
+        <li>
+          <strong>{{ rec.label }}</strong>: {{ rec.message }}
+          <span class="impact">Impact {{ rec.impact }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p>No significant positive signals detected.</p>
+      {% endif %}
+    </div>
+
+    <div class="result-card">
+      <h3>Improvement Suggestions</h3>
+      {% if recommendations.improvements %}
+      <ul class="recommendation-list improvements">
+        {% for rec in recommendations.improvements %}
+        <li>
+          <strong>{{ rec.label }}</strong>: {{ rec.message }}
+          <span class="impact">Impact {{ rec.impact }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p>No critical improvements needed.</p>
+      {% endif %}
+    </div>
+
+    <button onclick="window.location.href='/'" class="btn btn-ghost btn-reset" style="align-self:flex-end">Predict another game</button>
+  </section>
+
+  {% else %}
+  <section class="results-panel" aria-label="Prediction results">
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--sage-600)"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>
+      </div>
+      <h2>Ready to predict</h2>
+      <p>Fill in the game features on the left, then click <strong>Predict Success</strong> to see results here.</p>
+    </div>
+  </section>
+  {% endif %}
+
 </div>
 {% endblock %}
