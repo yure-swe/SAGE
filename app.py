@@ -16,12 +16,30 @@ import logging
 import os
 from logging.handlers import RotatingFileHandler
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, url_for
 from predictor import predict, ALL_FEATURES, CLASS_RANGES, N_CLASSES
 from recommender import get_recommendations
 from validation import validate_form_data, FIELD_SPECS
 
 app = Flask(__name__)
+
+
+
+
+
+# -- Version query string, for css
+@app.context_processor
+def override_url_for():
+    return dict(url_for=dated_url_for)
+
+def dated_url_for(endpoint, **values):
+    if endpoint == 'static':
+        filename = values.get('filename')
+        if filename:
+            file_path = os.path.join(app.root_path, 'static', filename)
+            if os.path.exists(file_path):
+                values['v'] = int(os.stat(file_path).st_mtime)
+    return url_for(endpoint, **values)
 
 # ── Hardening: cap request size (prevents memory-exhaustion attacks) ─────────
 app.config["MAX_CONTENT_LENGTH"] = 256 * 1024  # 256 KB — way more than we need
