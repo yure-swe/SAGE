@@ -1,8 +1,4 @@
-# =============================================================================
-# app.py — Main Flask Application (Updated with Dashboard Structure)
-# =============================================================================
-# Thesis: Ensemble Learning for Predicting Game Success (Pre-Launch Focus)
-#
+# app.py — Main Flask Application 
 # Routes:
 # GET/POST / → main dashboard (form + results)
 # GET /model-info → model evaluation metrics
@@ -10,7 +6,6 @@
 # GET /about → methodology & thesis info
 # POST /api/predict → JSON endpoint
 # GET /health → server health check
-# =============================================================================
 
 import logging
 import os
@@ -22,10 +17,6 @@ from recommender import get_recommendations
 from validation import validate_form_data, FIELD_SPECS
 
 app = Flask(__name__)
-
-
-
-
 
 # -- Version query string, for css
 @app.context_processor
@@ -135,10 +126,7 @@ FORM_SECTIONS = [
             {"name": "publisher_count", "label": "Number of Publishers", "type": "number", "default": 1, "min": 0, "max": 10, "step": 1},
 
             {"name": "required_age", "label": "Required Age (0=none)", "type": "number", "default": 0, "min": 0, "max": 18, "step": 1},
-            # REMOVED: is_mature_content is now auto-derived from required_age
-            # in compute_derived_features() (1 if required_age >= 17 else 0).
-            # Keeping a manual toggle here would let the user submit a value
-            # inconsistent with the training pipeline.
+
         ]
     },
     {
@@ -244,8 +232,6 @@ def compute_derived_features(form_data: dict) -> dict:
     # CHANGED: has_publisher hidden — always assumed present
     d["has_publisher"] = 1
 
-    # CHANGED: auto-derive is_mature_content from required_age (matches training pipeline).
-    # Form toggle is hidden; this is the single source of truth.
     d["is_mature_content"] = 1 if f("required_age") >= 17 else 0
 
     # CHANGED: if free to play, force prices to 0
@@ -263,8 +249,6 @@ def compute_derived_features(form_data: dict) -> dict:
         f("has_support_email")                             * 0.05
     )
 
-    # steam_integration — RENAMED from steam_features_score to match the
-    # name the model was trained on (feature_dict.pkl).
     d["steam_integration"] = (
         f("has_achievements")       * 0.25 +
         f("has_trading_cards")      * 0.15 +
@@ -274,30 +258,21 @@ def compute_derived_features(form_data: dict) -> dict:
         f("has_family_sharing")     * 0.10
     )
 
-    # platform_reach — was missing entirely.
     d["platform_reach"] = platform_count / 3.0
 
-    # marketing_score — was missing entirely.
     d["marketing_score"] = (
         f("has_website")                            * 0.30 +
         clip(f("screenshot_count"), 0, 10) / 10    * 0.70
     )
 
-    # publisher_backing — was missing entirely.
     d["publisher_backing"] = (
         f("has_publisher")                           * 0.60 +
         clip(f("publisher_count"), 0, 3) / 3.0      * 0.40
     )
-
-    # localization_score — was missing entirely.
     d["localization_score"] = (
         clip(f("supported_languages_count"), 0, 20) / 20    * 0.70 +
         clip(f("full_audio_languages_count"), 0, 10) / 10   * 0.30
     )
-
-    # CHANGED: keep d["price"] / d["initialprice"] in USD for re-render in the form.
-    # Cents conversion (model was trained on USD cents) is applied in build_model_input()
-    # right before predict(), without mutating the dict shown back to the user.
 
     return d
 
@@ -320,9 +295,7 @@ def build_model_input(form_data: dict) -> dict:
     return model_input
 
 
-# =============================================================================
-# ERROR HANDLERS — return JSON for /api/* and friendly HTML elsewhere
-# =============================================================================
+# ERROR HANDLERS 
 
 def _wants_json() -> bool:
     return (
@@ -368,9 +341,7 @@ def _server_error(e):
     return ("Internal server error.", 500)
 
 
-# =============================================================================
 # ROUTES
-# =============================================================================
 
 @app.route("/dataset")
 def dataset():
@@ -553,8 +524,6 @@ def health():
     }), 200
 
 
-# =============================================================================
-# ENTRY POINT (local dev only — Gunicorn uses wsgi.py on Hostinger)
-# =============================================================================
+# ENTRY POINT 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
