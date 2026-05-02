@@ -53,9 +53,6 @@ FIELD_SPECS: Dict[str, Tuple[float, float, str]] = {
     "has_publisher":     (0, 1,  "bool"),
     "is_solo_dev":       (0, 1,  "bool"),
     "required_age":      (0, 18, "int"),
-    # REMOVED: is_mature_content is auto-derived from required_age in
-    # compute_derived_features() (app.py). Accepting it from the client
-    # would let users submit a value inconsistent with the training pipeline.
 
     # Steam features
     "has_achievements":       (0, 1,   "bool"),
@@ -72,8 +69,8 @@ FIELD_SPECS: Dict[str, Tuple[float, float, str]] = {
     # Tags & Community
     "tag_count":           (0, 20,   "int"),
     "has_multiplayer_tag": (0, 1,    "bool"),
-    "top_tag_votes_total": (0, 5000, "int"),
-    "top_tag_votes_mean":  (0, 1000, "int"),
+    "top_tag_votes_total": (0, 50000, "int"),
+    "top_tag_votes_mean":  (0, 10000, "int"),
     "is_multiplayer":      (0, 1,    "bool"),
 
     # Packaging & DLC

@@ -150,8 +150,8 @@ FORM_SECTIONS = [
             {"name": "tag_count", "label": "Number of Tags", "type": "number", "default": 5, "min": 0, "max": 20, "step": 1},
             # CHANGED: has_multiplayer_tag hidden — auto-derived from is_multiplayer
             {"name": "has_multiplayer_tag", "label": "Has Multiplayer Tag?", "type": "toggle", "default": 0, "hidden": True},
-            {"name": "top_tag_votes_total", "label": "Top Tag Votes Total", "type": "number", "default": 500,"min": 0, "max": 5000, "step": 10},
-            {"name": "top_tag_votes_mean", "label": "Top Tag Votes Mean", "type": "number", "default": 100,"min": 0, "max": 1000, "step": 10},
+            {"name": "top_tag_votes_total", "label": "Top Tag Votes Total", "type": "number", "default": 500,"min": 0, "max": 50000, "step": 10},
+            {"name": "top_tag_votes_mean", "label": "Top Tag Votes Mean", "type": "number", "default": 100,"min": 0, "max": 10000, "step": 10},
             {"name": "is_multiplayer", "label": "Multiplayer Game?", "type": "toggle", "default": 0},
         ]
     },
