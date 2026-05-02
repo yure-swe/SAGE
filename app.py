@@ -177,16 +177,16 @@ FORM_SECTIONS = [
 
 # ── Model performance metrics (for /model-info page) ─────────────────────────
 MODEL_METRICS = {
-    "ensemble":          {"weighted_f1": 0.6211, "macro_f1": 0.2688, "accuracy": 0.7085},
-    "random_forest":     {"weighted_f1": 0.6329, "macro_f1": 0.3019, "accuracy": 0.663},
-    "gradient_boosting": {"weighted_f1": 0.6244, "macro_f1": 0.2748, "accuracy": 0.702},
-    "xgboost":           {"weighted_f1": 0.5869, "macro_f1": 0.2902, "accuracy": 0.552},
+    "ensemble":          {"weighted_f1": 0.6203, "macro_f1": 0.2716, "accuracy": 0.706},
+    "random_forest":     {"weighted_f1": 0.6334, "macro_f1": 0.3009, "accuracy": 0.663},
+    "gradient_boosting": {"weighted_f1": 0.6199, "macro_f1": 0.2694, "accuracy": 0.698},
+    "xgboost":           {"weighted_f1": 0.5899, "macro_f1": 0.2998, "accuracy": 0.554},
 }
 
 DATASET_INFO = {
     "total_games": 10000,
     "train_test_split": "80/20",
-    "n_features": 48,
+    "n_features": 52,
     "n_classes": 6,
     "class_distribution": {
         "Class 0 (≤10K)": 4500,
