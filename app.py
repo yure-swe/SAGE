@@ -135,8 +135,10 @@ FORM_SECTIONS = [
             {"name": "publisher_count", "label": "Number of Publishers", "type": "number", "default": 1, "min": 0, "max": 10, "step": 1},
 
             {"name": "required_age", "label": "Required Age (0=none)", "type": "number", "default": 0, "min": 0, "max": 18, "step": 1},
-            # CHANGED: mature content hidden — always passed as 0
-            {"name": "is_mature_content","label": "Mature Content (18+)?", "type": "toggle", "default": 0, "hidden": True},
+            # REMOVED: is_mature_content is now auto-derived from required_age
+            # in compute_derived_features() (1 if required_age >= 17 else 0).
+            # Keeping a manual toggle here would let the user submit a value
+            # inconsistent with the training pipeline.
         ]
     },
     {
@@ -203,6 +205,11 @@ def compute_derived_features(form_data: dict) -> dict:
     """
     Compute composite/derived features from raw form inputs.
     Mirrors the feature engineering in enrich_prelaunch.py.
+
+    NOTE: Feature names below MUST match the names in
+    models/saved_models/feature_dict.pkl["all_features"], otherwise
+    build_feature_vector() in predictor.py will silently insert 0.0
+    for the trained slot and the prediction will be wrong.
     """
     d = form_data
 
@@ -211,6 +218,9 @@ def compute_derived_features(form_data: dict) -> dict:
             return float(d.get(key, default))
         except (ValueError, TypeError):
             return float(default)
+
+    def clip(v, lo, hi):
+        return max(lo, min(hi, v))
 
     
     if not form_data.get("has_publisher"):
@@ -231,31 +241,58 @@ def compute_derived_features(form_data: dict) -> dict:
     # CHANGED: auto-derive has_multiplayer_tag from is_multiplayer toggle
     d["has_multiplayer_tag"] = 1 if f("is_multiplayer") >= 1 else 0
 
-    # CHANGED: hidden fields with fixed defaults
+    # CHANGED: has_publisher hidden — always assumed present
     d["has_publisher"] = 1
-    d["is_mature_content"] = 0
+
+    # CHANGED: auto-derive is_mature_content from required_age (matches training pipeline).
+    # Form toggle is hidden; this is the single source of truth.
+    d["is_mature_content"] = 1 if f("required_age") >= 17 else 0
 
     # CHANGED: if free to play, force prices to 0
     if f("is_free") >= 1:
         d["price"] = 0
         d["initialprice"] = 0
 
-    # Derived composite scores — same formulas as enrich_prelaunch.py
+    # ── Derived composite scores 
     d["store_page_score"] = (
-        min(f("screenshot_count"), 10) / 10 * 0.30 +
-        f("has_trailer")       * 0.25 +
-        f("has_detailed_desc") * 0.25 +
-        f("has_website")       * 0.10 +
-        f("has_support_email") * 0.10
+        clip(f("screenshot_count"), 0, 10) / 10           * 0.30 +
+        f("has_trailer")                                   * 0.25 +
+        f("has_detailed_desc")                             * 0.15 +
+        clip(f("supported_languages_count"), 0, 20) / 20  * 0.15 +
+        f("has_website")                                   * 0.10 +
+        f("has_support_email")                             * 0.05
     )
 
-    d["steam_features_score"] = (
-        f("has_achievements")      * 0.25 +
-        f("has_trading_cards")     * 0.15 +
-        f("has_cloud_save")        * 0.15 +
-        f("has_workshop")          * 0.20 +
-        f("has_controller_support")* 0.15 +
-        f("has_family_sharing")    * 0.10
+    # steam_integration — RENAMED from steam_features_score to match the
+    # name the model was trained on (feature_dict.pkl).
+    d["steam_integration"] = (
+        f("has_achievements")       * 0.25 +
+        f("has_trading_cards")      * 0.15 +
+        f("has_cloud_save")         * 0.15 +
+        f("has_workshop")           * 0.20 +
+        f("has_controller_support") * 0.15 +
+        f("has_family_sharing")     * 0.10
+    )
+
+    # platform_reach — was missing entirely.
+    d["platform_reach"] = platform_count / 3.0
+
+    # marketing_score — was missing entirely.
+    d["marketing_score"] = (
+        f("has_website")                            * 0.30 +
+        clip(f("screenshot_count"), 0, 10) / 10    * 0.70
+    )
+
+    # publisher_backing — was missing entirely.
+    d["publisher_backing"] = (
+        f("has_publisher")                           * 0.60 +
+        clip(f("publisher_count"), 0, 3) / 3.0      * 0.40
+    )
+
+    # localization_score — was missing entirely.
+    d["localization_score"] = (
+        clip(f("supported_languages_count"), 0, 20) / 20    * 0.70 +
+        clip(f("full_audio_languages_count"), 0, 10) / 10   * 0.30
     )
 
     # CHANGED: keep d["price"] / d["initialprice"] in USD for re-render in the form.
@@ -357,7 +394,7 @@ def dashboard():
         all_toggle_fields = [
             "is_free", "platform_windows", "platform_mac", "platform_linux",
             "has_trailer", "has_detailed_desc", "has_website", "has_support_email",
-            "has_publisher", "is_solo_dev", "is_mature_content",
+            "has_publisher", "is_solo_dev",
             "has_achievements", "has_trading_cards", "has_workshop", "has_cloud_save",
             "has_controller_support", "has_vr_support", "has_in_app_purchases",
             "has_family_sharing", "has_multiplayer_tag", "is_multiplayer",

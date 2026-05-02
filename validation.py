@@ -53,7 +53,9 @@ FIELD_SPECS: Dict[str, Tuple[float, float, str]] = {
     "has_publisher":     (0, 1,  "bool"),
     "is_solo_dev":       (0, 1,  "bool"),
     "required_age":      (0, 18, "int"),
-    "is_mature_content": (0, 1,  "bool"),
+    # REMOVED: is_mature_content is auto-derived from required_age in
+    # compute_derived_features() (app.py). Accepting it from the client
+    # would let users submit a value inconsistent with the training pipeline.
 
     # Steam features
     "has_achievements":       (0, 1,   "bool"),
