@@ -99,13 +99,13 @@
             {% endfor %}
         </div>
 
-        <p class="note"><strong>Note:</strong> Click any plot to enlarge. Source files live in <code>model_outputs_prelaunch/shap_outputs/</code>; copy them into <code>static/images/</code> for display.</p>
+        <p class="note"><strong>Note:</strong> Click any plot to enlarge.</p>
     </div>
 
     <div class="card">
         <h2>Key findings</h2>
         <ul>
-            <li><strong>Most influential features</strong>: store page quality (trailers, screenshots, detailed descriptions), publisher backing, platform reach, localization.</li>
+            <li><strong>Most influential features</strong>: store page quality (trailers, screenshots, detailed descriptions), tags, prices, steam integration, multiplayer support, publisher backing, platform reach, and localization.</li>
             <li><strong>Genre effects</strong>: indie dominates the dataset but shows lower average success; Action, Strategy, RPG correlate with higher tiers.</li>
             <li><strong>Pricing strategy</strong>: mid-range ($9.99–$19.99) performs best. Free-to-play is bimodal (very successful or fails fast).</li>
             <li><strong>Release timing</strong>: October–December slightly outperforms (holiday sales effect).</li>
@@ -128,7 +128,7 @@
         <h2>Download full thesis</h2>
         <p>The complete thesis document is available for download:</p>
         <a href="{{ url_for('static', filename='thesis/Bit-by-Bit_Thesis.pdf') }}" class="btn btn-primary" target="_blank" download>Download thesis PDF</a>
-        <p class="note"><em>If the PDF is not available, place it at <code>static/thesis/Bit-by-Bit_Thesis.pdf</code>.</em></p>
+        <!-- put the pdf in static/thesis/here-->
     </div>
 
     <div class="card">
