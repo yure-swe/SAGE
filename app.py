@@ -150,8 +150,6 @@ FORM_SECTIONS = [
             {"name": "tag_count", "label": "Number of Tags", "type": "number", "default": 5, "min": 0, "max": 20, "step": 1},
             # CHANGED: has_multiplayer_tag hidden — auto-derived from is_multiplayer
             {"name": "has_multiplayer_tag", "label": "Has Multiplayer Tag?", "type": "toggle", "default": 0, "hidden": True},
-            {"name": "top_tag_votes_total", "label": "Top Tag Votes Total", "type": "number", "default": 500,"min": 0, "max": 50000, "step": 10},
-            {"name": "top_tag_votes_mean", "label": "Top Tag Votes Mean", "type": "number", "default": 100,"min": 0, "max": 10000, "step": 10},
             {"name": "is_multiplayer", "label": "Multiplayer Game?", "type": "toggle", "default": 0},
         ]
     },
@@ -166,17 +164,19 @@ FORM_SECTIONS = [
 ]
 
 # ── Model performance metrics (for /model-info page) ─────────────────────────
+
 MODEL_METRICS = {
-    "ensemble":          {"weighted_f1": 0.6203, "macro_f1": 0.2716, "accuracy": 0.706},
-    "random_forest":     {"weighted_f1": 0.6334, "macro_f1": 0.3009, "accuracy": 0.663},
-    "gradient_boosting": {"weighted_f1": 0.6199, "macro_f1": 0.2694, "accuracy": 0.698},
-    "xgboost":           {"weighted_f1": 0.5899, "macro_f1": 0.2998, "accuracy": 0.554},
+    "ensemble":          {"weighted_f1": 0.6095, "macro_f1": 0.2503, "accuracy": 0.7025},
+    "random_forest":     {"weighted_f1": 0.6246, "macro_f1": 0.2785, "accuracy": 0.6610},
+    "gradient_boosting": {"weighted_f1": 0.6188, "macro_f1": 0.2683, "accuracy": 0.7020},
+    "xgboost":           {"weighted_f1": 0.5787, "macro_f1": 0.2898, "accuracy": 0.5405},
 }
+
 
 DATASET_INFO = {
     "total_games": 10000,
     "train_test_split": "80/20",
-    "n_features": 52,
+    "n_features": 50,
     "n_classes": 6,
     "class_distribution": {
         "Class 0 (≤10K)": 4500,

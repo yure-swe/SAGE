@@ -69,8 +69,6 @@ FIELD_SPECS: Dict[str, Tuple[float, float, str]] = {
     # Tags & Community
     "tag_count":           (0, 20,   "int"),
     "has_multiplayer_tag": (0, 1,    "bool"),
-    "top_tag_votes_total": (0, 50000, "int"),
-    "top_tag_votes_mean":  (0, 10000, "int"),
     "is_multiplayer":      (0, 1,    "bool"),
 
     # Packaging & DLC
