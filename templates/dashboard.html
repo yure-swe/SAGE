@@ -46,14 +46,12 @@
                 {% if field.get('help') %}
                 <small class="field-help">{{ field.help }}</small>
                 {% endif %}
-
               {% elif field.type == 'date' %}
                 <input type="date" id="{{ field.name }}" name="{{ field.name }}"
                        value="{{ form_data.get(field.name, field.default) if form_data else field.default }}">
                 {% if field.get('help') %}
                 <small class="field-help">{{ field.help }}</small>
                 {% endif %}
-
               {% elif field.type == 'select' %}
                 <select id="{{ field.name }}" name="{{ field.name }}">
                   {% for option in field.options %}
@@ -255,33 +253,34 @@
 <script>
   // is_free → zero price fields (page-specific, inline so it runs immediately on load and after AJAX swap)
   (function () {
-    function bindToggleControlsNumber(toggleId, numberIds, forcedValue) {
-      var toggle = document.getElementById(toggleId);
-      if (!toggle) return;
-      var inputs = numberIds
-        .map(function (id) { return document.getElementById(id); })
-        .filter(Boolean);
-      function sync() {
-        var on = toggle.checked;
-        inputs.forEach(function (input) {
-          if (on) {
-            input.dataset.prevValue = input.value;
-            input.value = forcedValue;
-            input.disabled = true;
-            input.style.opacity = "0.5";
-          } else {
-            input.disabled = false;
-            input.style.opacity = "";
-            if (input.dataset.prevValue !== undefined && input.value === String(forcedValue)) {
-              input.value = input.dataset.prevValue;
-            }
-          }
-        });
+    
+function bindToggleControlsNumber(toggleId, numberIds, forcedValue, invert) {
+  var toggle = document.getElementById(toggleId);
+  if (!toggle) return;
+  var inputs = numberIds.map(function (id) { return document.getElementById(id); }).filter(Boolean);
+  function sync() {
+    var on = invert ? !toggle.checked : toggle.checked;
+    inputs.forEach(function (input) {
+      if (on) {
+        input.dataset.prevValue = input.value;
+        input.value = forcedValue;
+        input.disabled = true;
+        input.style.opacity = "0.5";
+      } else {
+        input.disabled = false;
+        input.style.opacity = "";
+        if (input.dataset.prevValue !== undefined && input.value === String(forcedValue)) {
+          input.value = input.dataset.prevValue;
+        }
       }
-      toggle.addEventListener("change", sync);
-      sync();
-    }
+    });
+  }
+  toggle.addEventListener("change", sync);
+  sync();
+}
+
     bindToggleControlsNumber("is_free", ["price", "initialprice"], 0);
+    bindToggleControlsNumber("has_achievements", ["achievement_count"], 0, true);
   })();
 </script>
 {% endblock %}

@@ -27,7 +27,7 @@
         </ul>
         <p style="margin-top:14px"><strong>Thesis adviser:</strong> Elisa V. Malasaga</p>
         <p><strong>Department:</strong> Computer Science, FEU Institute of Technology</p>
-        <p><strong>Submission:</strong> March 2026</p>
+        <p><strong>Submission:</strong> May 2026</p>
     </div>
 
     <div class="card">
@@ -62,12 +62,33 @@
         <h3>Feature engineering</h3>
         <p>From raw Steam data, pre-launch features were extracted and engineered, including tag binary columns dynamically read from the dataset:</p>
         <ul>
-            <li><strong>Raw features:</strong> pricing, release date &amp; month, genre flags, platform support, language checklist (weighted), screenshots, store-page signals, Steam ecosystem flags, tag binaries, packaging</li>
-            <li><strong>New in v2:</strong> <code>weighted_language_score</code> (per-language market weights), <code>game_age_days</code> (computed from release date), top-50 tag binary columns from community tagging</li>
-            <li><strong>Removed in v2:</strong> <code>has_trailer</code>, <code>dlc_count</code>, <code>has_trading_cards</code>, <code>has_workshop</code>, developer/publisher budget proxies, <code>Indie</code> genre flag</li>
-            <li><strong>Composite scores (5):</strong> <code>store_page_score</code>, <code>platform_reach</code>, <code>marketing_score</code>, <code>localization_score</code>, <code>steam_integration</code></li>
-        </ul>
+            
+<li><strong>Raw (34):</strong> 
+<code>price</code>, <code>initialprice</code>, <code>is_free</code>, <code>release_month</code>, <code>required_age</code>, 
+<code>has_website</code>, <code>has_support_email</code>, 
+<code>platform_windows</code>, <code>platform_mac</code>, <code>platform_linux</code>, 
+<code>screenshot_count</code>, <code>about_length</code>, <code>short_desc_length</code>, <code>has_detailed_desc</code>, 
+<code>supported_languages_count</code>, <code>full_audio_languages_count</code>, 
+<code>has_achievements</code>, <code>achievement_count</code>, 
+<code>has_cloud_save</code>, <code>has_controller_support</code>, <code>has_vr_support</code>, 
+<code>has_in_app_purchases</code>, <code>has_family_sharing</code>, 
+<code>category_count</code>, <code>tag_count</code>, <code>package_count</code>, <code>sku_count</code>, 
+<code>genre_action</code>, <code>genre_adventure</code>, <code>genre_rpg</code>, 
+<code>genre_strategy</code>, <code>genre_simulation</code>, <code>genre_sports</code>, <code>genre_racing</code>
+</li>
 
+            <li><strong>Engineered Scalar [Numeric] (3):</strong> 
+<code>game_age_days</code>, <code>weighted_language_score</code>, <code>platform_count</code>
+</li>
+
+<li><strong>Engineered Binary [0/1] (53):</strong> 
+  <code>has_detailed_desc</code>, <code>is_mature_content</code>, <code>is_multiplayer</code>, 50 x <code>tag_*</code> (e.g., <code>tag_action</code>, <code>tag_rpg</code>, <code>tag_strategy</code>)
+ <!-- ... up to top-50 tags -->
+</li>
+
+<li><strong>Composite Scores [0–1] (4):</strong> 
+<code>store_page_score</code>, <code>marketing_score</code>, <code>steam_integration</code>, <code>localization_score</code>
+</li>
         <h3>Headline results</h3>
         <div class="metrics-grid" style="margin-top:8px">
             <div class="metric-tile"><div class="label">Weighted F1</div><div class="value">0.6292</div></div>

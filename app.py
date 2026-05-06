@@ -91,11 +91,11 @@ FORM_SECTIONS = [
     {
         "title": "💰 Pricing",
         "fields": [
+            {"name": "is_free",       "label": "Free to Play?",       "type": "toggle", "default": 0},
             {"name": "price",         "label": "Price (USD)",         "type": "number",
              "default": 9.99, "min": 0, "max": 200, "step": 0.01},
             {"name": "initialprice",  "label": "Initial Price (USD)", "type": "number",
              "default": 9.99, "min": 0, "max": 200, "step": 0.01},
-            {"name": "is_free",       "label": "Free to Play?",       "type": "toggle", "default": 0},
         ]
     },
     {
@@ -159,6 +159,10 @@ FORM_SECTIONS = [
     {
         "title": "🏪 Store Page",
         "fields": [
+            {"name": "has_website",       "label": "Has Official Website?",
+             "type": "toggle", "default": 0},
+            {"name": "has_support_email", "label": "Has Support Email?",
+             "type": "toggle", "default": 0},
             {"name": "screenshot_count",  "label": "Number of Screenshots",
              "type": "number", "default": 5,   "min": 0, "max": 20, "step": 1},
             {"name": "about_length",      "label": "Description Length (chars)",
@@ -166,18 +170,13 @@ FORM_SECTIONS = [
              "hint": ">500 chars automatically sets the Detailed Description flag."},
             {"name": "has_detailed_desc", "label": "Detailed Description (auto)",
              "type": "toggle", "default": 0, "hidden": True},
-            {"name": "has_website",       "label": "Has Official Website?",
-             "type": "toggle", "default": 0},
-            {"name": "has_support_email", "label": "Has Support Email?",
-             "type": "toggle", "default": 0},
+
         ]
     },
     {
-        "title": "🏆 Steam Features",
+        "title": "🏆 Categories",
         "fields": [
             {"name": "has_achievements",      "label": "Steam Achievements?",   "type": "toggle", "default": 0},
-            {"name": "achievement_count",     "label": "Number of Achievements",
-             "type": "number", "default": 0, "min": 0, "max": 500, "step": 1},
             {"name": "has_cloud_save",        "label": "Steam Cloud Save?",     "type": "toggle", "default": 0},
             {"name": "has_controller_support","label": "Controller Support?",   "type": "toggle", "default": 0},
             {"name": "has_vr_support",        "label": "VR Support?",           "type": "toggle", "default": 0},
@@ -186,19 +185,21 @@ FORM_SECTIONS = [
             # category_count is auto-derived from the toggles above + is_multiplayer
             {"name": "category_count",        "label": "Total Steam Categories (auto)",
              "type": "number", "default": 0, "min": 0, "max": 15, "step": 1, "hidden": True},
+            {"name": "achievement_count",     "label": "Number of Achievements",
+             "type": "number", "default": 0, "min": 0, "max": 500, "step": 1},
         ]
     },
     {
         "title": "🎯 Audience",
         "fields": [
-            {"name": "required_age",    "label": "Required Age (0 = none)",
-             "type": "number", "default": 0, "min": 0, "max": 18, "step": 1,
-             "hint": "≥ 17 automatically sets the mature content flag."},
-            {"name": "is_mature_content","label": "Mature Content (auto)",
-             "type": "toggle", "default": 0, "hidden": True},
             {"name": "is_multiplayer",  "label": "Multiplayer Game?", "type": "toggle", "default": 0,
              "help": "Check if your game includes any online/local co-op, PvP, or MMO. "
                      "Also select the relevant multiplayer tags in the Tags section below."},
+            {"name": "required_age",    "label": "Required Age",
+             "type": "number", "default": 0, "min": 0, "max": 18, "step": 1,
+             "help": "≥ 17 automatically sets the mature content flag. 0 if none"},
+            {"name": "is_mature_content","label": "Mature Content (auto)",
+             "type": "toggle", "default": 0, "hidden": True},
         ]
     },
     {
@@ -216,7 +217,7 @@ FORM_SECTIONS = [
                          "community-driven tagging system."),
             },
             {"name": "tag_count",           "label": "Tag Count (auto)",
-             "type": "number", "default": 5,   "min": 0, "max": 20, "step": 1, "hidden": True},
+             "type": "number", "default": 0,   "min": 0, "max": 20, "step": 1, "hidden": True},
 
         ]
     },

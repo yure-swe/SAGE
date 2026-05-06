@@ -562,6 +562,7 @@ ul, ol { list-style: none; }
 
 /* Languages & Tags sections: stack to a single column so the
    checklist gets the full width instead of being squeezed. */
+
 .form-section:has(.lang-wrap) .fields-grid,
 .form-section:has(.tag-wrap) .fields-grid {
   grid-template-columns: 1fr;
