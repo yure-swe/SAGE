@@ -75,7 +75,7 @@
             </thead>
             <tbody>
                 {% for class_id, info in class_ranges.items() %}
-                {% set count = dataset_info.class_distribution["Class " ~ class_id ~ " (" ~ info.label ~ ")"] %}
+                {% set count = dataset_info.class_distribution[class_id] | default(0) %}
                 <tr style="border-bottom:1px solid var(--border)">
                     <td style="padding:10px 12px;font-family:var(--font-mono);color:var(--sage-600);font-weight:600">{{ class_id }}</td>
                     <td style="padding:10px 12px">{{ info.label }}</td>

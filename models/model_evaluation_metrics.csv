@@ -1,0 +1,5 @@
+Model,Weighted F1,Macro F1,Accuracy
+Random Forest,0.6239,0.2782,0.6825
+Gradient Boosting,0.6327,0.2997,0.7075
+XGBoost,0.6093,0.338,0.5695
+Stacked Ensemble,0.6292,0.2954,0.712

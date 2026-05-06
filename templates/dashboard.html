@@ -40,8 +40,18 @@
                 <input type="number" id="{{ field.name }}" name="{{ field.name }}"
                        value="{{ form_data.get(field.name, field.default) if form_data else field.default }}"
                        min="{{ field.min }}" max="{{ field.max }}" step="{{ field.step }}">
-                {% if field.hint %}
+                {% if field.get('hint') %}
                 <small class="field-hint">{{ field.hint }}</small>
+                {% endif %}
+                {% if field.get('help') %}
+                <small class="field-help">{{ field.help }}</small>
+                {% endif %}
+
+              {% elif field.type == 'date' %}
+                <input type="date" id="{{ field.name }}" name="{{ field.name }}"
+                       value="{{ form_data.get(field.name, field.default) if form_data else field.default }}">
+                {% if field.get('help') %}
+                <small class="field-help">{{ field.help }}</small>
                 {% endif %}
 
               {% elif field.type == 'select' %}
@@ -65,6 +75,47 @@
                       {% if form_data.get(field.name, field.default)|int == 1 %}checked{% endif %}
                     {% elif field.default|int == 1 %}checked{% endif %}>
                 </div>
+                {% if field.get('help') %}
+                <small class="field-help">{{ field.help }}</small>
+                {% endif %}
+
+              {% elif field.type == 'language_checklist' %}
+                {% set selected_langs = form_data.get('selected_languages', []) if form_data else [] %}
+                <div class="lang-wrap" id="lang-checklist">
+                  {% for lang_name, weight in field.options %}
+                    {% set is_checked = lang_name in selected_langs %}
+                    <label class="lang-chip{% if is_checked %} is-checked{% endif %}">
+                      <input type="checkbox"
+                             name="selected_languages"
+                             value="{{ lang_name }}"
+                             {% if is_checked %}checked{% endif %}>
+                      <span>{{ lang_name }}</span>
+                      <span class="lang-weight">{{ "%.2f"|format(weight) }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+                {% if field.get('help') %}
+                <small class="field-help">{{ field.help }}</small>
+                {% endif %}
+
+              {% elif field.type == 'tag_checklist' %}
+                {% set checked_tags = form_data.get('selected_tags', []) if form_data else [] %}
+                <div class="tag-wrap" id="tag-checklist">
+                  {% for col_name, display_name in field.options %}
+                    {% set is_checked = col_name in checked_tags or (form_data and form_data.get(col_name, 0)|int == 1) %}
+                    <label class="tag-chip{% if is_checked %} is-checked{% endif %}">
+                      <input type="checkbox"
+                             name="selected_tags"
+                             value="{{ col_name }}"
+                             {% if is_checked %}checked{% endif %}>
+                      <span>{{ display_name }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+                {% if field.get('help') %}
+                <small class="field-help">{{ field.help }}</small>
+                {% endif %}
+
               {% endif %}
 
             </div>
@@ -92,7 +143,13 @@
         <span class="tier-class">{{ result.predicted_label }}</span>
         <span class="tier-name">{{ result.predicted_tier }}</span>
         <span class="tier-range">{{ result.predicted_range }}</span>
+        {% if result.game_age_context %}
+        <span class="tier-age-context">{{ result.game_age_context }}</span>
+        {% endif %}
       </div>
+      {% if result.output_label %}
+      <p class="output-label-text">{{ result.output_label }}</p>
+      {% endif %}
       <div class="confidence-ring" data-confidence="{{ result.confidence }}" aria-label="Confidence {{ result.confidence }} percent">
         <svg viewBox="0 0 84 84">
           <circle class="track" cx="42" cy="42" r="36"/>
@@ -196,8 +253,7 @@
 {% block scripts %}
 {{ super() if super }}
 <script>
-  // CHANGED: free-to-play disables/zeros the price inputs;
-  //          solo-developer disables/forces developer_count = 1.
+  // is_free → zero price fields (page-specific, inline so it runs immediately on load and after AJAX swap)
   (function () {
     function bindToggleControlsNumber(toggleId, numberIds, forcedValue) {
       var toggle = document.getElementById(toggleId);
@@ -205,7 +261,6 @@
       var inputs = numberIds
         .map(function (id) { return document.getElementById(id); })
         .filter(Boolean);
-
       function sync() {
         var on = toggle.checked;
         inputs.forEach(function (input) {
@@ -225,64 +280,8 @@
       }
       toggle.addEventListener("change", sync);
       sync();
-      }
-    function bindToggleControlsNumberNot(toggleId, numberIds, forcedValue) {
-      var toggle = document.getElementById(toggleId);
-      if (!toggle) return;
-      var inputs = numberIds
-        .map(function (id) { return document.getElementById(id); })
-        .filter(Boolean);
-
-      function sync() {
-        var off = !toggle.checked;
-        inputs.forEach(function (input) {
-          if (off) {
-            input.dataset.prevValue = input.value;
-            input.value = forcedValue;
-            input.disabled = true;
-            input.style.opacity = "0.5";
-          } else {
-            input.disabled = false;
-            input.style.opacity = "";
-            if (input.dataset.prevValue !== undefined && input.value === String(forcedValue)) {
-              input.value = input.dataset.prevValue;
-            }
-          }
-        });
-      }
-
-
-      toggle.addEventListener("change", sync);
-      sync();
     }
-
-    
-
-
-// Has Publisher → disables publisher_count when off
-const hasPub = document.querySelector('[name="has_publisher"]');
-const pubCount = document.querySelector('[name="publisher_count"]');
-
-function syncPublisher() {
-  if (!hasPub || !pubCount) return;
-
-  if (!hasPub.checked) {
-    pubCount.value = 0;
-    pubCount.disabled = true;
-    pubCount.style.opacity = "0.5";   // ← add this
-  } else {
-    pubCount.disabled = false;
-    pubCount.style.opacity = "";      // ← reset
-    if (Number(pubCount.value) < 1) pubCount.value = 1;
-  }
-}
-
-hasPub?.addEventListener('change', syncPublisher);
-syncPublisher(); // run once on page load
-
-
     bindToggleControlsNumber("is_free", ["price", "initialprice"], 0);
-    bindToggleControlsNumber("is_solo_dev", ["developer_count"], 1);
   })();
 </script>
 {% endblock %}

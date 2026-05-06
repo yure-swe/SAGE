@@ -47,12 +47,18 @@
                             {% if field.type == 'number' %}Number
                             {% elif field.type == 'toggle' %}Yes / No
                             {% elif field.type == 'select' %}Selection
+                            {% elif field.type == 'date' %}Date picker
+                            {% elif field.type == 'language_checklist' %}Language checklist
+                            {% elif field.type == 'tag_checklist' %}Tag checklist
                             {% endif %}
                         </td>
                         <td style="padding:8px 10px;font-family:var(--font-mono);color:var(--fg-muted)">
                             {% if field.type == 'number' %}{{ field.min }}–{{ field.max }}
                             {% elif field.type == 'toggle' %}0 / 1
                             {% elif field.type == 'select' %}{{ field.options|length }} options
+                            {% elif field.type == 'date' %}YYYY-MM-DD
+                            {% elif field.type == 'language_checklist' %}{{ field.options|length }} languages
+                            {% elif field.type == 'tag_checklist' %}{{ field.options|length }} tags
                             {% endif %}
                         </td>
                     </tr>
@@ -109,24 +115,24 @@
             <h2>FAQ</h2>
 
             <details class="model-details">
-                <summary>What if I don't have a publisher?</summary>
-                <div style="padding:12px 14px;color:var(--fg-muted)">Set <code>has_publisher</code> to 0 and <code>publisher_count</code> to 0. Publisher backing helps but isn't required.</div>
+                <summary>Can I predict for unreleased games?</summary>
+                <div style="padding:12px 14px;color:var(--fg-muted)">Yes — the model uses only pre-launch features (pricing, store page, platform support, tags, languages, etc.).</div>
             </details>
             <details class="model-details">
-                <summary>Can I predict for unreleased games?</summary>
-                <div style="padding:12px 14px;color:var(--fg-muted)">Yes — the model uses only pre-launch features (pricing, store page, platform support, etc.).</div>
+                <summary>How do I set the release date?</summary>
+                <div style="padding:12px 14px;color:var(--fg-muted)">Use the date picker to set your planned launch date. SAGE computes <code>game_age_days</code> automatically and frames the prediction accordingly (e.g. "at launch").</div>
             </details>
             <details class="model-details">
                 <summary>What if some features are unknown?</summary>
-                <div style="padding:12px 14px;color:var(--fg-muted)">Use the defaults shown in the form. Leave toggles unchecked (0) for features you don't plan to ship.</div>
+                <div style="padding:12px 14px;color:var(--fg-muted)">Use the defaults shown in the form. Leave toggles unchecked (0) for features you don't plan to ship. Leave language/tag checklists empty if you haven't decided yet.</div>
             </details>
             <details class="model-details">
                 <summary>Why is my confidence low?</summary>
-                <div style="padding:12px 14px;color:var(--fg-muted)">Your features fall in regions where multiple classes overlap. Adjust key drivers (store page quality, pricing, platform reach) and try again.</div>
+                <div style="padding:12px 14px;color:var(--fg-muted)">Your features fall in regions where multiple classes overlap. Adjust key drivers (store page quality, pricing, platform reach, language coverage) and try again.</div>
             </details>
             <details class="model-details">
                 <summary>How accurate is the model?</summary>
-                <div style="padding:12px 14px;color:var(--fg-muted)">The ensemble achieves 70.25% accuracy and 0.6095 weighted F1 on the test set. See <a href="/model-info">Model Metrics</a> for details.</div>
+                <div style="padding:12px 14px;color:var(--fg-muted)">The ensemble achieves 70.85% accuracy and 0.6211 weighted F1 on the test set. See <a href="/model-info">Model Metrics</a> for details.</div>
             </details>
             <details class="model-details">
                 <summary>Does it work for non-Steam platforms?</summary>

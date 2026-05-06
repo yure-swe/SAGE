@@ -184,6 +184,8 @@
           bindForm();
           bindDetailedDescCoupling();
           bindNumericGuards();
+          bindChips(formPanel);
+          bindReleaseDateSync(formPanel);
           animateResults(resultsPanel);
           bindLightbox(document);
 
@@ -290,6 +292,39 @@
     sync();
   }
 
+  // ── Chip toggle (tag and language checklists) ────────────────────────────
+  function bindChips(root) {
+    const scope = root || document;
+    scope.querySelectorAll("#tag-checklist label, #lang-checklist label").forEach((label) => {
+      if (label.dataset.chipBound === "1") return;
+      label.dataset.chipBound = "1";
+      const cb = label.querySelector("input[type='checkbox']");
+      if (!cb) return;
+      if (cb.checked) label.classList.add("is-checked");
+      cb.addEventListener("change", () => {
+        label.classList.toggle("is-checked", cb.checked);
+      });
+    });
+  }
+
+  // ── Release date → release_month sync ───────────────────────────────────
+  function bindReleaseDateSync(root) {
+    const scope = root || document;
+    const dateInput  = scope.querySelector("#release_date");
+    const monthSelect = scope.querySelector("#release_month");
+    if (!dateInput || !monthSelect) return;
+    if (dateInput.dataset.dateSyncBound === "1") return;
+    dateInput.dataset.dateSyncBound = "1";
+    function syncMonth() {
+      const val = dateInput.value;
+      if (!val) return;
+      const month = new Date(val + "T00:00:00").getMonth() + 1;
+      monthSelect.value = String(month);
+    }
+    dateInput.addEventListener("change", syncMonth);
+    if (dateInput.value) syncMonth();
+  }
+
   function bindNumericGuards() {
     document.querySelectorAll('#prediction-form input[type="number"]').forEach((input) => {
       if (input.dataset.numericGuardBound === "1") return;
@@ -328,6 +363,8 @@
     bindForm();
     bindDetailedDescCoupling();
     bindNumericGuards();
+    bindChips();
+    bindReleaseDateSync();
     animateResults();
     bindLightbox();
     bindScrollspy();

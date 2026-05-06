@@ -1,160 +1,186 @@
-# Centralized validation rules for all user-supplied form / JSON inputs.
-# Used by both the HTML dashboard route ("/") and the JSON API ("/api/predict").
+# =============================================================================
+# validation.py — Server-Side Input Validation  (v2)
+# =============================================================================
+# Validates and coerces all form / API inputs before they reach predictor.py.
 #
-# Design goals:
-#    Fail loudly on bad input instead of silently coercing to 0.0
-#    Enforce sane numeric ranges (e.g. month 1-12, non-negative counts)
-#    Return human-readable error messages the UI can display
-#    Never crash the server on malformed payloads
+# Changes from v1:
+#   REMOVED from FIELD_SPECS (dropped from model):
+#     - has_trailer, trailer_count
+#     - has_trading_cards, has_workshop
+#     - dlc_count
+#     - is_solo_dev, has_publisher, publisher_count, developer_count
+#     - has_multiplayer_tag
+#     - json_price_raw, has_support_url, publisher_backing
+#     - Indie (genre flag)
+#
+#   ADDED to FIELD_SPECS:
+#     - game_age_days         (computed from release_date; 0 = launch day)
+#     - weighted_language_score (0.0–1.0 normalized)
+#     - short_desc_length     (if present in CSV)
+#
+#   NOTES:
+#     - Tag binary columns (tag_*) are validated dynamically — any 0/1 column
+#       that starts with tag_ passes through without being listed in FIELD_SPECS.
+#     - weighted_language_score and game_age_days are computed by preprocess_form()
+#       before validate_form_data() is called, so they are expected to be present.
 # =============================================================================
 
-from typing import Any, Dict, List, Tuple
+from __future__ import annotations
+from typing import Any
 
-# ── Field specifications ─────────────────────────────────────────────────────
-# Mirrors FORM_SECTIONS in app.py but in a flat, validation-friendly shape.
-# Each entry: (min, max, kind)  where kind ∈ {"int", "float", "bool"}
-FIELD_SPECS: Dict[str, Tuple[float, float, str]] = {
-    # Pricing
-    "price":                       (0,    200,  "float"),
-    "initialprice":                (0,    200,  "float"),
-    "is_free":                     (0,    1,    "bool"),
+# ---------------------------------------------------------------------------
+# FIELD_SPECS
+# ---------------------------------------------------------------------------
+# Each entry: (type_fn, min_val, max_val, default)
+#   type_fn   — callable to coerce the raw string value
+#   min_val   — inclusive lower bound (None = no check)
+#   max_val   — inclusive upper bound (None = no check)
+#   default   — value used if field is missing from the submission
+# ---------------------------------------------------------------------------
 
-    # Release
-    "release_month":               (1,    12,   "int"),
+FIELD_SPECS: dict[str, tuple] = {
+    # ── Pricing ───────────────────────────────────────────────────────────────
+    "price":                        (float,  0.0,    200.0,   9.99),
+    "initialprice":                 (float,  0.0,    200.0,   9.99),
+    "is_free":                      (int,    0,      1,       0),
 
-    # Genre toggles
-    "Action":     (0, 1, "bool"), "Adventure":  (0, 1, "bool"),
-    "RPG":        (0, 1, "bool"), "Strategy":   (0, 1, "bool"),
-    "Simulation": (0, 1, "bool"), "Indie":      (0, 1, "bool"),
-    "Sports":     (0, 1, "bool"), "Racing":     (0, 1, "bool"),
+    # ── Timing ────────────────────────────────────────────────────────────────
+    "release_month":                (int,    1,      12,      10),
+    "game_age_days":                (int,    0,      20000,   0),
 
-    # Platform
-    "platform_windows": (0, 1, "bool"),
-    "platform_mac":     (0, 1, "bool"),
-    "platform_linux":   (0, 1, "bool"),
-    "platform_count":   (0, 3, "int"),
+    # ── Store page ────────────────────────────────────────────────────────────
+    "screenshot_count":             (int,    0,      50,      5),
+    "about_length":                 (int,    0,      10000,   500),
+    "short_desc_length":            (int,    0,      1000,    0),
+    "has_detailed_desc":            (int,    0,      1,       0),
+    "has_website":                  (int,    0,      1,       0),
+    "has_support_email":            (int,    0,      1,       0),
 
-    # Languages
-    "supported_languages_count":  (0, 50, "int"),
-    "full_audio_languages_count": (0, 20, "int"),
+    # ── Platform ─────────────────────────────────────────────────────────────
+    "platform_windows":             (int,    0,      1,       1),
+    "platform_mac":                 (int,    0,      1,       0),
+    "platform_linux":               (int,    0,      1,       0),
+    "platform_count":               (int,    1,      3,       1),
 
-    # Store page
-    "screenshot_count":  (0, 20,   "int"),
-    "has_trailer":       (0, 1,    "bool"),
-    "trailer_count":     (0, 10,   "int"),
-    "about_length":      (0, 5000, "int"),
-    "has_detailed_desc": (0, 1,    "bool"),
-    "has_website":       (0, 1,    "bool"),
-    "has_support_email": (0, 1,    "bool"),
+    # ── Languages ─────────────────────────────────────────────────────────────
+    "supported_languages_count":    (int,    0,      50,      1),
+    "full_audio_languages_count":   (int,    0,      20,      0),
+    "weighted_language_score":      (float,  0.0,    1.0,     0.0),
 
-    # Developer / Publisher
-    "developer_count":   (1, 20, "int"),
-    "publisher_count":   (0, 10, "int"),
-    "has_publisher":     (0, 1,  "bool"),
-    "is_solo_dev":       (0, 1,  "bool"),
-    "required_age":      (0, 18, "int"),
+    # ── Audience ──────────────────────────────────────────────────────────────
+    "required_age":                 (int,    0,      18,      0),
+    "is_mature_content":            (int,    0,      1,       0),
 
-    # Steam features
-    "has_achievements":       (0, 1,   "bool"),
-    "achievement_count":      (0, 500, "int"),
-    "has_trading_cards":      (0, 1,   "bool"),
-    "has_workshop":           (0, 1,   "bool"),
-    "has_cloud_save":         (0, 1,   "bool"),
-    "has_controller_support": (0, 1,   "bool"),
-    "has_vr_support":         (0, 1,   "bool"),
-    "has_in_app_purchases":   (0, 1,   "bool"),
-    "has_family_sharing":     (0, 1,   "bool"),
-    "category_count":         (0, 15,  "int"),
+    # ── Steam features ────────────────────────────────────────────────────────
+    "has_achievements":             (int,    0,      1,       0),
+    "achievement_count":            (int,    0,      1000,    0),
+    "has_cloud_save":               (int,    0,      1,       0),
+    "has_controller_support":       (int,    0,      1,       0),
+    "has_vr_support":               (int,    0,      1,       0),
+    "has_in_app_purchases":         (int,    0,      1,       0),
+    "has_family_sharing":           (int,    0,      1,       0),
+    "category_count":               (int,    0,      20,      3),
 
-    # Tags & Community
-    "tag_count":           (0, 20,   "int"),
-    "has_multiplayer_tag": (0, 1,    "bool"),
-    "is_multiplayer":      (0, 1,    "bool"),
+    # ── Genre flags ───────────────────────────────────────────────────────────
+    "Action":                       (int,    0,      1,       0),
+    "Adventure":                    (int,    0,      1,       0),
+    "RPG":                          (int,    0,      1,       0),
+    "Strategy":                     (int,    0,      1,       0),
+    "Simulation":                   (int,    0,      1,       0),
+    "Sports":                       (int,    0,      1,       0),
+    "Racing":                       (int,    0,      1,       0),
+    # Note: "Indie" intentionally removed — not a genre in v2
 
-    # Packaging & DLC
-    "dlc_count":     (0, 50, "int"),
-    "package_count": (1, 10, "int"),
-    "sku_count":     (1, 20, "int"),
+    # ── Tags (volume metrics) ─────────────────────────────────────────────────
+    "tag_count":                    (int,    0,      30,      5),
+
+
+    # ── Multiplayer ───────────────────────────────────────────────────────────
+    "is_multiplayer":               (int,    0,      1,       0),
+
+    # ── Packaging ─────────────────────────────────────────────────────────────
+    "package_count":                (int,    1,      20,      1),
+    "sku_count":                    (int,    1,      50,      1),
+
+    # ── Derived composite scores (computed by predictor.compute_derived_features)
+    # Listed here so validation accepts them if submitted; defaults prevent errors.
+    "store_page_score":             (float,  0.0,    1.0,     0.0),
+    "platform_reach":               (float,  0.0,    1.0,     0.0),
+    "marketing_score":              (float,  0.0,    1.0,     0.0),
+    "localization_score":           (float,  0.0,    1.0,     0.0),
+    "steam_integration":            (float,  0.0,    1.0,     0.0),
 }
-
-# Maximum keys we'll accept in a single payload (defense against bloat)
-MAX_PAYLOAD_KEYS = 200
-
-
-def _coerce(value: Any, kind: str) -> float:
-    """Coerce a single value to numeric. Raises ValueError on failure."""
-    if value is None or value == "":
-        raise ValueError("empty value")
-    # HTML toggles often arrive as "on"/"off"
-    if kind == "bool":
-        if isinstance(value, bool):
-            return float(value)
-        sval = str(value).strip().lower()
-        if sval in ("1", "true", "on", "yes"):  return 1.0
-        if sval in ("0", "false", "off", "no"): return 0.0
-        # Fall through — let float() try
-    num = float(value)
-    if kind == "int":
-        if num != int(num):
-            raise ValueError("expected integer")
-    return num
 
 
 def validate_form_data(
-    raw: Any,
-    *,
+    raw_data: dict[str, Any],
     strict: bool = False,
-) -> Tuple[Dict[str, float], List[str]]:
+) -> tuple[dict[str, Any], list[str]]:
     """
-    Validate and clean an incoming feature payload.
+    Validate and coerce all form/API inputs.
 
     Parameters
     ----------
-    raw : dict-like
-        The submitted form/JSON data.
-    strict : bool
-        If True, unknown keys are rejected. If False, they're ignored.
+    raw_data : dict  — raw string values from request.form or JSON body
+    strict   : bool  — if True, raise errors on unknown fields;
+                       if False (default), silently pass them through
 
     Returns
     -------
-    (cleaned, errors)
-        cleaned : dict of {feature: float}  — only contains keys with valid values
-        errors  : list of human-readable error messages (empty = all good)
+    (cleaned_data, errors)
+        cleaned_data : dict  — coerced values + defaults for missing fields
+        errors       : list  — human-readable error strings (empty = ok)
     """
-    errors: List[str] = []
-    cleaned: Dict[str, float] = {}
+    cleaned = {}
+    errors  = []
 
-    if not isinstance(raw, dict):
-        return {}, ["Payload must be a JSON object / form mapping."]
+    for field, (type_fn, min_val, max_val, default) in FIELD_SPECS.items():
+        raw = raw_data.get(field)
 
-    if len(raw) > MAX_PAYLOAD_KEYS:
-        return {}, [f"Payload too large ({len(raw)} keys, max {MAX_PAYLOAD_KEYS})."]
-
-    for key, value in raw.items():
-        spec = FIELD_SPECS.get(key)
-        if spec is None:
-            if strict:
-                errors.append(f"Unknown field: '{key}'")
+        # Missing or empty → apply default
+        if raw is None or str(raw).strip() == "":
+            cleaned[field] = default
             continue
 
-        lo, hi, kind = spec
-
-        # Treat missing/blank as 0 for booleans (unchecked toggle behavior),
-        # but require an explicit value for numeric fields.
-        if (value is None or value == "") and kind == "bool":
-            cleaned[key] = 0.0
-            continue
-
+        # Coerce type
         try:
-            num = _coerce(value, kind)
+            val = type_fn(raw)
         except (ValueError, TypeError):
-            errors.append(f"'{key}': invalid value '{value}' (expected {kind})")
+            errors.append(
+                f"'{field}': expected {type_fn.__name__}, got {repr(raw)!r}."
+            )
+            cleaned[field] = default
             continue
 
-        if num < lo or num > hi:
-            errors.append(f"'{key}': {num} is out of range [{lo}, {hi}]")
-            continue
+        # Range check
+        if min_val is not None and val < min_val:
+            errors.append(
+                f"'{field}': value {val} is below minimum {min_val}."
+            )
+            val = min_val
 
-        cleaned[key] = num
+        if max_val is not None and val > max_val:
+            errors.append(
+                f"'{field}': value {val} exceeds maximum {max_val}."
+            )
+            val = max_val
+
+        cleaned[field] = val
+
+    # Pass through tag binary columns (tag_*) — validated as 0/1 int
+    for key, raw in raw_data.items():
+        if key.startswith("tag_") and key not in cleaned:
+            try:
+                val = int(float(raw))
+                cleaned[key] = max(0, min(1, val))   # clamp to 0/1
+            except (ValueError, TypeError):
+                cleaned[key] = 0
+
+    # Pass through any fields not in FIELD_SPECS when not strict
+    # (e.g. selected_languages list, release_date string — consumed upstream)
+    if not strict:
+        for key, val in raw_data.items():
+            if key not in cleaned:
+                cleaned[key] = val
 
     return cleaned, errors

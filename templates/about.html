@@ -60,17 +60,19 @@
         </ul>
 
         <h3>Feature engineering</h3>
-        <p>From raw Steam data, <strong>50 pre-launch features</strong> were extracted and engineered:</p>
+        <p>From raw Steam data, pre-launch features were extracted and engineered, including tag binary columns dynamically read from the dataset:</p>
         <ul>
-            <li><strong>Raw (45):</strong> pricing, release month, genre, platform, languages, screenshots, trailers, developer/publisher info, Steam features, tags, DLC</li>
-            <li><strong>Composite (7):</strong> store page quality, marketing investment, platform reach, publisher backing, localization, Steam integration, mature-content flag</li>
+            <li><strong>Raw features:</strong> pricing, release date &amp; month, genre flags, platform support, language checklist (weighted), screenshots, store-page signals, Steam ecosystem flags, tag binaries, packaging</li>
+            <li><strong>New in v2:</strong> <code>weighted_language_score</code> (per-language market weights), <code>game_age_days</code> (computed from release date), top-N tag binary columns from community tagging</li>
+            <li><strong>Removed in v2:</strong> <code>has_trailer</code>, <code>dlc_count</code>, <code>has_trading_cards</code>, <code>has_workshop</code>, developer/publisher budget proxies, <code>Indie</code> genre flag</li>
+            <li><strong>Composite scores (5):</strong> <code>store_page_score</code>, <code>platform_reach</code>, <code>marketing_score</code>, <code>localization_score</code>, <code>steam_integration</code></li>
         </ul>
 
         <h3>Headline results</h3>
         <div class="metrics-grid" style="margin-top:8px">
-            <div class="metric-tile"><div class="label">Weighted F1</div><div class="value">0.6095</div></div>
-            <div class="metric-tile"><div class="label">Macro F1</div><div class="value">0.2503</div></div>
-            <div class="metric-tile"><div class="label">Accuracy</div><div class="value">70.25%</div></div>
+            <div class="metric-tile"><div class="label">Weighted F1</div><div class="value">0.6211</div></div>
+            <div class="metric-tile"><div class="label">Macro F1</div><div class="value">0.2688</div></div>
+            <div class="metric-tile"><div class="label">Accuracy</div><div class="value">70.85%</div></div>
         </div>
     </div>
 
@@ -105,11 +107,12 @@
     <div class="card">
         <h2>Key findings</h2>
         <ul>
-            <li><strong>Most influential features</strong>: store page quality (trailers, screenshots, detailed descriptions), tags, prices, steam integration, multiplayer support, publisher backing, platform reach, and localization.</li>
-            <li><strong>Genre effects</strong>: indie dominates the dataset but shows lower average success; Action, Strategy, RPG correlate with higher tiers.</li>
+            <li><strong>Most influential features</strong>: weighted language coverage, store page quality (screenshots, detailed descriptions), Steam tags, pricing, steam integration, multiplayer support, platform reach, and localization.</li>
+            <li><strong>Genre effects</strong>: Action, Strategy, and RPG correlate with higher owner tiers.</li>
             <li><strong>Pricing strategy</strong>: mid-range ($9.99–$19.99) performs best. Free-to-play is bimodal (very successful or fails fast).</li>
             <li><strong>Release timing</strong>: October–December slightly outperforms (holiday sales effect).</li>
-            <li><strong>Steam integration</strong>: achievements, trading cards, and Workshop support correlate positively with owner tier.</li>
+            <li><strong>Steam integration</strong>: achievements, cloud save, and controller support correlate positively with owner tier.</li>
+            <li><strong>Language coverage</strong>: supporting English, Simplified Chinese, Russian, and German captures the largest Steam market segments.</li>
         </ul>
     </div>
 

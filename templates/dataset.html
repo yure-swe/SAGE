@@ -86,11 +86,11 @@
                 <span class="step-num">2</span>
                 <div>
                     <h4>Extract pre-launch features from JSON</h4>
-                    <p>For each game, derive ~30 columns: platform support,
-                    language counts, screenshot &amp; trailer counts, description
-                    lengths, publisher/developer counts, Steam category flags
-                    (achievements, workshop, cloud, controller, VR…), tag counts
-                    and top-tag vote totals, package &amp; SKU counts.</p>
+                    <p>For each game, derive columns: platform support,
+                    language list &amp; weighted score, screenshot counts, description
+                    lengths, Steam category flags
+                    (achievements, cloud save, controller, VR…), top-N tag binary columns,
+                    package &amp; SKU counts, and <code>game_age_days</code> from release date.</p>
                 </div>
             </li>
             <li>
@@ -106,12 +106,13 @@
                 <span class="step-num">4</span>
                 <div>
                     <h4>Engineer composite scores</h4>
-                    <p>Seven derived features combine raw signals into
+                    <p>Five derived features combine raw signals into
                     interpretable proxies: <code>store_page_score</code>,
                     <code>platform_reach</code>, <code>marketing_score</code>,
-                    <code>publisher_backing</code>, <code>localization_score</code>,
+                    <code>localization_score</code>,
                     <code>steam_integration</code>, and an
-                    <code>is_mature_content</code> flag.</p>
+                    <code>is_mature_content</code> flag. Language support is encoded
+                    as <code>weighted_language_score</code> using per-language market weights.</p>
                 </div>
             </li>
             <li>
@@ -172,67 +173,58 @@
                 <h4>Pricing &amp; release</h4>
                 <ul class="chips">
                     <li>price</li><li>initialprice</li><li>is_free</li>
-                    <li>release_month</li>
+                    <li>release_month</li><li>game_age_days</li>
                 </ul>
             </div>
             <div class="feature-group">
                 <h4>Genre flags (one-hot)</h4>
                 <ul class="chips">
                     <li>Action</li><li>Adventure</li><li>RPG</li><li>Strategy</li>
-                    <li>Simulation</li><li>Indie</li><li>Sports</li><li>Racing</li>
+                    <li>Simulation</li><li>Sports</li><li>Racing</li>
                 </ul>
             </div>
             <div class="feature-group">
                 <h4>Store-page</h4>
                 <ul class="chips">
-                    <li>screenshot_count</li><li>has_trailer</li><li>trailer_count</li>
-                    <li>about_length</li><li>has_detailed_desc</li>
+                    <li>screenshot_count</li>
+                    <li>about_length</li><li>short_desc_length</li><li>has_detailed_desc</li>
                     <li>has_website</li><li>has_support_email</li><li>required_age</li>
                 </ul>
             </div>
             <div class="feature-group">
                 <h4>Platform &amp; localization</h4>
                 <ul class="chips">
-                  <li>platform_count</li>
+                    <li>platform_count</li>
                     <li>supported_languages_count</li>
                     <li>full_audio_languages_count</li>
-                </ul>
-            </div>
-            <div class="feature-group">
-                <h4>Studio signals</h4>
-                <ul class="chips">
-                    <li>developer_count</li><li>publisher_count</li>
-                    <li>has_publisher</li><li>is_solo_dev</li>
+                    <li>weighted_language_score</li>
                 </ul>
             </div>
             <div class="feature-group">
                 <h4>Steam ecosystem flags</h4>
                 <ul class="chips">
                     <li>has_achievements</li>
-                    <li>has_trading_cards</li><li>has_workshop</li>
                     <li>has_cloud_save</li><li>has_controller_support</li>
                     <li>has_vr_support</li><li>has_in_app_purchases</li>
                     <li>has_family_sharing</li><li>achievement_count</li><li>category_count</li>
                 </ul>
             </div>
             <div class="feature-group">
-                <h4>Categories, tags &amp; packaging</h4>
+                <h4>Tags &amp; packaging</h4>
                 <ul class="chips">
-                  <li>tag_count</li><li>is_multiplayer</li>
-                    <li>has_multiplayer_tag</li>
-                    <li>dlc_count</li><li>package_count</li>
-                    <li>sku_count</li>
+                    <li>tag_count</li><li>is_multiplayer</li>
+                    <li>tag_* (top-N binaries)</li>
+                    <li>package_count</li><li>sku_count</li>
                 </ul>
             </div>
             <div class="feature-group">
                 <h4>Engineered Composite Scores</h4>
                 <ul class="chips">
                     <li>store_page_score</li><li>platform_reach</li>
-                    <li>marketing_score</li><li>publisher_backing</li>
+                    <li>marketing_score</li>
                     <li>localization_score</li><li>steam_integration</li><li>is_mature_content</li>
                 </ul>
             </div>
-
         </div>
 
         <details class="excluded-block">
@@ -244,6 +236,11 @@
                 <li>average_2weeks</li><li>median_forever</li>
                 <li>median_2weeks</li><li>ccu</li><li>owners</li>
                 <li>log_owners</li><li>json_price_raw</li><li>appid</li>
+                <li>has_trailer</li><li>trailer_count</li><li>dlc_count</li>
+                <li>has_trading_cards</li><li>has_workshop</li>
+                <li>is_solo_dev</li><li>has_publisher</li><li>publisher_count</li>
+                <li>developer_count</li><li>has_multiplayer_tag</li><li>Indie</li>
+                <li>publisher_backing</li>
             </ul>
         </details>
     </section>
