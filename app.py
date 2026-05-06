@@ -245,10 +245,10 @@ ALL_TOGGLE_FIELDS = [
 # ── Model performance metrics (for /model-info page) ─────────────────────────
 # NOTE: Update these after retraining with v2 feature set.
 MODEL_METRICS = {
-    "ensemble":          {"weighted_f1": 0.6211, "macro_f1": 0.2688, "accuracy": 0.7085},
-    "random_forest":     {"weighted_f1": 0.6329, "macro_f1": 0.3019, "accuracy": 0.6630},
-    "gradient_boosting": {"weighted_f1": 0.6244, "macro_f1": 0.2748, "accuracy": 0.7020},
-    "xgboost":           {"weighted_f1": 0.5869, "macro_f1": 0.2902, "accuracy": 0.5520},
+    "ensemble":          {"weighted_f1": 0.6292, "macro_f1": 0.2954, "accuracy": 0.712},
+    "random_forest":     {"weighted_f1": 0.6239, "macro_f1": 0.2782, "accuracy": 0.6925},
+    "gradient_boosting": {"weighted_f1": 0.6327, "macro_f1": 0.2997, "accuracy": 0.7075},
+    "xgboost":           {"weighted_f1": 0.6093, "macro_f1": 0.2954, "accuracy": 0.5695},
 }
 DATASET_INFO = {
     "total_games":       10000,
@@ -407,10 +407,16 @@ def dashboard():
         form_data    = cleaned
         show_results = True
 
+        # Remember user-facing USD prices BEFORE compute_derived_features
+        # converts them to cents (model space). Otherwise the cents value
+        # would be rendered back into the form inputs (e.g. 9.99 → 999).
+        display_price        = form_data.get("price")
+        display_initialprice = form_data.get("initialprice")
+
         # 4. Compute derived/composite features (v2 formulas)
         form_data = compute_derived_features(form_data)
 
-        # 5. Run prediction
+        # 5. Run prediction (predictor expects price in cents — already converted)
         try:
             result = predict(form_data)
             recs   = get_recommendations(form_data, result["predicted_class"])
@@ -424,6 +430,11 @@ def dashboard():
                 show_results=False,
                 validation_errors=["Prediction failed. Please try again."],
             ), 500
+
+        # Restore USD values so the form re-renders with what the user typed
+        # (compute_derived_features mutated these to cents for the model).
+        form_data["price"]        = display_price
+        form_data["initialprice"] = display_initialprice
 
     return render_template(
         "dashboard.html",

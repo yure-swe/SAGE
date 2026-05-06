@@ -63,16 +63,16 @@
         <p>From raw Steam data, pre-launch features were extracted and engineered, including tag binary columns dynamically read from the dataset:</p>
         <ul>
             <li><strong>Raw features:</strong> pricing, release date &amp; month, genre flags, platform support, language checklist (weighted), screenshots, store-page signals, Steam ecosystem flags, tag binaries, packaging</li>
-            <li><strong>New in v2:</strong> <code>weighted_language_score</code> (per-language market weights), <code>game_age_days</code> (computed from release date), top-N tag binary columns from community tagging</li>
+            <li><strong>New in v2:</strong> <code>weighted_language_score</code> (per-language market weights), <code>game_age_days</code> (computed from release date), top-50 tag binary columns from community tagging</li>
             <li><strong>Removed in v2:</strong> <code>has_trailer</code>, <code>dlc_count</code>, <code>has_trading_cards</code>, <code>has_workshop</code>, developer/publisher budget proxies, <code>Indie</code> genre flag</li>
             <li><strong>Composite scores (5):</strong> <code>store_page_score</code>, <code>platform_reach</code>, <code>marketing_score</code>, <code>localization_score</code>, <code>steam_integration</code></li>
         </ul>
 
         <h3>Headline results</h3>
         <div class="metrics-grid" style="margin-top:8px">
-            <div class="metric-tile"><div class="label">Weighted F1</div><div class="value">0.6211</div></div>
-            <div class="metric-tile"><div class="label">Macro F1</div><div class="value">0.2688</div></div>
-            <div class="metric-tile"><div class="label">Accuracy</div><div class="value">70.85%</div></div>
+            <div class="metric-tile"><div class="label">Weighted F1</div><div class="value">0.6292</div></div>
+            <div class="metric-tile"><div class="label">Macro F1</div><div class="value">0.2954</div></div>
+            <div class="metric-tile"><div class="label">Accuracy</div><div class="value">71.20%</div></div>
         </div>
     </div>
 

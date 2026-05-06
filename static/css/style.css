@@ -560,6 +560,13 @@ ul, ol { list-style: none; }
   .form-section .fields-grid { grid-template-columns: 1fr; }
 }
 
+/* Languages & Tags sections: stack to a single column so the
+   checklist gets the full width instead of being squeezed. */
+.form-section:has(.lang-wrap) .fields-grid,
+.form-section:has(.tag-wrap) .fields-grid {
+  grid-template-columns: 1fr;
+}
+
 .form-field { display: flex; flex-direction: column; gap: 6px; }
 .form-field label {
   font-size: 13px;
