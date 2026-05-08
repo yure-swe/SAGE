@@ -250,37 +250,131 @@
 
 {% block scripts %}
 {{ super() if super }}
+
+{# Make the Free-to-Play toggle span the full width of the Pricing grid so
+   the two price inputs sit paired underneath it instead of orphaning the
+   Initial Price input on a second row in landscape layouts. #}
+<style>
+  #prediction-form .form-field:has(> label[for="is_free"]) {
+    grid-column: 1 / -1;
+  }
+</style>
+
 <script>
-  // is_free → zero price fields (page-specific, inline so it runs immediately on load and after AJAX swap)
+  // is_free → zero price fields, plus reverse coupling, mature-content mirror,
+  // and a working Reset button. Inline so it runs immediately on load and
+  // after the AJAX swap performed by static/js/app.js.
   (function () {
-    
-function bindToggleControlsNumber(toggleId, numberIds, forcedValue, invert) {
-  var toggle = document.getElementById(toggleId);
-  if (!toggle) return;
-  var inputs = numberIds.map(function (id) { return document.getElementById(id); }).filter(Boolean);
-  function sync() {
-    var on = invert ? !toggle.checked : toggle.checked;
-    inputs.forEach(function (input) {
-      if (on) {
-        input.dataset.prevValue = input.value;
-        input.value = forcedValue;
-        input.disabled = true;
-        input.style.opacity = "0.5";
-      } else {
-        input.disabled = false;
-        input.style.opacity = "";
-        if (input.dataset.prevValue !== undefined && input.value === String(forcedValue)) {
-          input.value = input.dataset.prevValue;
+
+    function bindToggleControlsNumber(toggleId, numberIds, forcedValue, invert) {
+      var toggle = document.getElementById(toggleId);
+      if (!toggle) return null;
+      var inputs = numberIds.map(function (id) { return document.getElementById(id); }).filter(Boolean);
+      function sync() {
+        var on = invert ? !toggle.checked : toggle.checked;
+        inputs.forEach(function (input) {
+          if (on) {
+            if (!input.disabled) input.dataset.prevValue = input.value;
+            input.value = forcedValue;
+            input.disabled = true;
+            input.style.opacity = "0.5";
+          } else {
+            input.disabled = false;
+            input.style.opacity = "";
+            if (input.dataset.prevValue !== undefined && input.value === String(forcedValue)) {
+              input.value = input.dataset.prevValue;
+            }
+          }
+        });
+      }
+      toggle.addEventListener("change", sync);
+      sync();
+      return sync;
+    }
+
+    var syncIsFree          = bindToggleControlsNumber("is_free", ["price", "initialprice"], 0);
+    var syncHasAchievements = bindToggleControlsNumber("has_achievements", ["achievement_count"], 0, true);
+
+    // ── Reverse coupling: both prices === 0  ⇒  auto-enable Free-to-Play ──
+    (function bindPriceToFreeCoupling() {
+      var isFree       = document.getElementById("is_free");
+      var price        = document.getElementById("price");
+      var initialprice = document.getElementById("initialprice");
+      if (!isFree || !price || !initialprice) return;
+      function check() {
+        // Skip while the inputs are locked by the forward rule (avoids loops).
+        if (price.disabled || initialprice.disabled) return;
+        var p  = parseFloat(price.value);
+        var ip = parseFloat(initialprice.value);
+        if (p === 0 && ip === 0 && !isFree.checked) {
+          isFree.checked = true;
+          isFree.dispatchEvent(new Event("change", { bubbles: true }));
         }
       }
-    });
-  }
-  toggle.addEventListener("change", sync);
-  sync();
-}
+      price.addEventListener("input", check);
+      initialprice.addEventListener("input", check);
+    })();
 
-    bindToggleControlsNumber("is_free", ["price", "initialprice"], 0);
-    bindToggleControlsNumber("has_achievements", ["achievement_count"], 0, true);
+    // ── Mature Content toggle ⇄ hidden required_age (0 or 17) ──
+    function syncMatureToAge() {
+      var mature = document.getElementById("is_mature_content");
+      var age    = document.getElementById("required_age");
+      if (!mature || !age) return;
+      age.value = mature.checked ? 17 : 0;
+    }
+    (function bindMatureCoupling() {
+      var mature = document.getElementById("is_mature_content");
+      if (!mature) return;
+      mature.addEventListener("change", syncMatureToAge);
+      // Initial alignment: if required_age was loaded as ≥17 from the server,
+      // reflect that on the visible toggle; otherwise mirror toggle to age.
+      var age = document.getElementById("required_age");
+      if (age && parseInt(age.value, 10) >= 17) {
+        mature.checked = true;
+      }
+      syncMatureToAge();
+    })();
+
+    // ── Reset button: native reset doesn't fire change/input events, so
+    //    re-run all the syncs and clear validation/error UI on the next tick.
+    (function bindReset() {
+      var form = document.getElementById("prediction-form");
+      if (!form) return;
+      form.addEventListener("reset", function () {
+        setTimeout(function () {
+          // Clear remembered "previous" values so toggle rules start fresh.
+          ["price", "initialprice", "achievement_count"].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) delete el.dataset.prevValue;
+          });
+
+          if (syncIsFree)          syncIsFree();
+          if (syncHasAchievements) syncHasAchievements();
+          syncMatureToAge();
+
+          // Detailed-description ⇄ description-length coupling (in app.js).
+          var about = document.getElementById("about_length");
+          if (about) about.dispatchEvent(new Event("input", { bubbles: true }));
+
+          // Release date → release_month select.
+          var dateInput = document.getElementById("release_date");
+          if (dateInput) dateInput.dispatchEvent(new Event("change", { bubbles: true }));
+
+          // Re-sync chip "is-checked" classes to their checkboxes.
+          document.querySelectorAll("#tag-checklist label, #lang-checklist label").forEach(function (label) {
+            var cb = label.querySelector("input[type='checkbox']");
+            if (cb) label.classList.toggle("is-checked", cb.checked);
+          });
+
+          // Wipe inline validation errors and the alert slot.
+          document.querySelectorAll(".field-error").forEach(function (el) {
+            el.classList.remove("field-error");
+          });
+          var slot = document.querySelector("#validation-alert-slot");
+          if (slot) slot.innerHTML = "";
+        }, 0);
+      });
+    })();
   })();
 </script>
 {% endblock %}

@@ -91,10 +91,10 @@ FORM_SECTIONS = [
     {
         "title": "💰 Pricing",
         "fields": [
-            {"name": "is_free",       "label": "Free to Play?",       "type": "toggle", "default": 0},
-            {"name": "price",         "label": "Price (USD)",         "type": "number",
+            {"name": "is_free",       "label": "Free to Play?",      "type": "toggle", "default": 0},
+            {"name": "price",         "label": "Price (0 - 200 USD)",         "type": "number",
              "default": 9.99, "min": 0, "max": 200, "step": 0.01},
-            {"name": "initialprice",  "label": "Initial Price (USD)", "type": "number",
+            {"name": "initialprice",  "label": "Initial Price (0 - 200 USD)", "type": "number",
              "default": 9.99, "min": 0, "max": 200, "step": 0.01},
         ]
     },
@@ -153,7 +153,7 @@ FORM_SECTIONS = [
             {"name": "supported_languages_count",  "label": "Text Languages (auto-count)",
              "type": "number", "default": 1, "min": 0, "max": 50, "step": 1, "hidden": True},
             {"name": "full_audio_languages_count", "label": "Full Audio Languages",
-             "type": "number", "default": 0, "min": 0, "max": 20, "step": 1},
+             "type": "number", "default": 0, "min": 0, "max": 20, "step": 1, "help": "Number of languages with full voice-over support."},
         ]
     },
     {
@@ -195,11 +195,15 @@ FORM_SECTIONS = [
             {"name": "is_multiplayer",  "label": "Multiplayer Game?", "type": "toggle", "default": 0,
              "help": "Check if your game includes any online/local co-op, PvP, or MMO. "
                      "Also select the relevant multiplayer tags in the Tags section below."},
-            {"name": "required_age",    "label": "Required Age",
+            # Mature Content is shown to the user as a simple toggle (17/18+).
+            # The numeric `required_age` is kept as a hidden field and mirrored
+            # from the toggle (0 or 17) so the existing server-side derivation
+            # in compute_derived_features (required_age >= 17 -> mature) still works.
+            {"name": "is_mature_content", "label": "Mature Content?",
+             "type": "toggle", "default": 0, "help": "Does it include contents like violence, nudity, and/or strong language?"},
+            {"name": "required_age",     "label": "Required Age",
              "type": "number", "default": 0, "min": 0, "max": 18, "step": 1,
-             "help": "≥ 17 automatically sets the mature content flag. 0 if none"},
-            {"name": "is_mature_content","label": "Mature Content (auto)",
-             "type": "toggle", "default": 0, "hidden": True},
+             "hidden": True},
         ]
     },
     {
