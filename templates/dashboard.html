@@ -162,53 +162,7 @@
       <div class="confidence-meter"><span>Confidence: {{ result.confidence }}%</span></div>
     </div>
 
-    <!-- Combined probabilities card with tab toggle -->
-    <div class="result-card probs-tabbed-card">
-      <div class="prob-tabs" role="tablist">
-        <button class="prob-tab is-active" role="tab" aria-selected="true" aria-controls="tab-ensemble" data-tab="ensemble">Class Probabilities</button>
-        <button class="prob-tab" role="tab" aria-selected="false" aria-controls="tab-base" data-tab="base">Base Model Predictions</button>
-      </div>
-
-      <div class="prob-tab-panel" id="tab-ensemble" role="tabpanel">
-        <div class="probability-bars">
-          {% for i in range(result.probabilities|length) %}
-          {% set p = result.probabilities[i] %}
-          <div class="prob-item">
-            <span class="prob-label">{{ result.class_labels[i] }}</span>
-            <div class="prob-bar-container">
-              <div class="prob-bar-fill" style="width: {{ p }}%"></div>
-              <span class="prob-bar-value{% if p < 15 %} is-outside{% endif %}"
-                    style="left: {{ p }}%">{{ p }}%</span>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-
-      <div class="prob-tab-panel is-hidden" id="tab-base" role="tabpanel">
-        {% for model_name, probs in result.base_probs.items() %}
-        <details class="model-details">
-          <summary>{{ model_name }}</summary>
-          <div class="probability-bars small">
-            {% for i in range(probs|length) %}
-            {% set p = probs[i] %}
-            <div class="prob-item">
-              <span class="prob-label">{{ result.class_labels[i] }}</span>
-              <div class="prob-bar-container">
-                <div class="prob-bar-fill" style="width: {{ p }}%"></div>
-                <span class="prob-bar-value{% if p < 15 %} is-outside{% endif %}"
-                      style="left: {{ p }}%">{{ p }}%</span>
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-        </details>
-        {% endfor %}
-      </div>
-    </div>
-
-    <!-- Strengths + Recommendations side by side -->
-    <div class="results-bottom-row">
+    <!-- Strengths + Improvement Suggestions (stacked, full width) -->
       <div class="result-card">
         <h3>Strengths</h3>
         {% if recommendations.positives %}
@@ -239,6 +193,50 @@
         {% else %}
         <p>No major improvements needed, good job!</p>
         {% endif %}
+      </div>
+
+    <!-- Combined probabilities card with tab toggle -->
+    <div class="result-card probs-tabbed-card">
+      <div class="prob-tabs" role="tablist">
+        <button class="prob-tab is-active" role="tab" aria-selected="true" aria-controls="tab-ensemble" data-tab="ensemble">Class Probabilities</button>
+        <button class="prob-tab" role="tab" aria-selected="false" aria-controls="tab-base" data-tab="base">Base Model Predictions</button>
+      </div>
+
+      <div class="prob-tab-panel" id="tab-ensemble" role="tabpanel">
+        <div class="probability-bars">
+          {% for i in range(result.probabilities|length) %}
+          {% set p = result.probabilities[i] %}
+          <div class="prob-item">
+            <span class="prob-label">{{ result.class_labels[i] }}</span>
+            <div class="prob-bar-container">
+              <div class="prob-bar-fill" style="width: {{ p }}%"></div>
+              <span class="prob-bar-value{% if p < 15 %} is-outside{% endif %}"
+                    style="left: {{ p }}%">{{ p }}%</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="prob-tab-panel is-hidden" id="tab-base" role="tabpanel">
+        {% for model_name, probs in result.base_probs.items() %}
+        <details class="model-details" open>
+          <summary>{{ model_name }}</summary>
+          <div class="probability-bars small">
+            {% for i in range(probs|length) %}
+            {% set p = probs[i] %}
+            <div class="prob-item">
+              <span class="prob-label">{{ result.class_labels[i] }}</span>
+              <div class="prob-bar-container">
+                <div class="prob-bar-fill" style="width: {{ p }}%"></div>
+                <span class="prob-bar-value{% if p < 15 %} is-outside{% endif %}"
+                      style="left: {{ p }}%">{{ p }}%</span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </details>
+        {% endfor %}
       </div>
     </div>
 

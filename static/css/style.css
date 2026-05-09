@@ -748,9 +748,11 @@ ul, ol { list-style: none; }
   gap: 0;
   border-bottom: 1px solid var(--border, #e2e8f0);
   margin-bottom: 1rem;
+  flex: 1;
 }
 
 .prob-tab {
+  flex: 1;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -1053,7 +1055,9 @@ a.btn-outline:hover,
   transition: transform var(--dur) var(--ease);
 }
 .model-details[open] summary::after { content: "−"; }
-.model-details .probability-bars { padding: 12px 14px; }
+
+.model-details .probability-bars { padding: 0 14px; }
+
 
 /* Recommendations */
 .recommendation-list { padding-left: 0 !important; list-style: none !important; }
