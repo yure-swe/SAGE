@@ -28,6 +28,36 @@
       });
     });
   }
+  
+
+// ── Reset button ──
+  function bindResetBtn() {
+    const resetBtn = document.getElementById('reset-btn');
+    if (!resetBtn) return;
+    resetBtn.addEventListener('click', function () {
+      fetch('/', { method: 'GET' })
+        .then(r => r.text())
+        .then(html => {
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          const newForm = doc.querySelector('.form-panel');
+          const formPanel = document.querySelector('.form-panel');
+          if (newForm && formPanel) {
+            formPanel.innerHTML = newForm.innerHTML;
+            bindFormSections(formPanel);
+            bindResetBtn();
+            bindForm();
+            bindDetailedDescCoupling();
+            bindNumericGuards();
+            bindChips(formPanel);
+            bindReleaseDateSync(formPanel);
+            if (window.SAGE_resyncToggles) window.SAGE_resyncToggles();
+          }
+          // Clear validation errors
+          const slot = document.querySelector('#validation-alert-slot');
+          if (slot) slot.innerHTML = '';
+        });
+    });
+  }
 
   // ── Sidebar ──────────────────────────────────────────────────────────────
   const COLLAPSE_KEY = "sage-sidebar-collapsed";
@@ -196,6 +226,7 @@
               s.dataset.kept = '1';
             }
           });
+          bindResetBtn();
           bindForm();
           bindDetailedDescCoupling();
           bindNumericGuards();
@@ -375,6 +406,7 @@
     bindThemeToggle();
     bindSidebar();
     bindFormSections();
+    bindResetBtn();
     bindForm();
     bindDetailedDescCoupling();
     bindNumericGuards();

@@ -129,7 +129,7 @@
       {% endfor %}
 
       <div class="form-actions">
-        <button type="reset" class="btn btn-ghost btn-reset">Reset</button>
+        <button type="button" class="btn btn-ghost btn-reset" id="reset-btn">Reset</button>
         <button type="submit" class="btn btn-primary btn-submit">
           <span class="spinner" aria-hidden="true"></span>
           <span>Predict Success</span>
@@ -164,6 +164,51 @@
       <div class="confidence-meter"><span>Confidence: {{ result.confidence }}%</span></div>
     </div>
 
+
+    <!-- Combined probabilities card with tab toggle -->
+    <div class="result-card probs-tabbed-card">
+      <div class="prob-tabs" role="tablist">
+        <button class="prob-tab is-active" role="tab" aria-selected="true" aria-controls="tab-ensemble" data-tab="ensemble">Class Probabilities</button>
+        <button class="prob-tab" role="tab" aria-selected="false" aria-controls="tab-base" data-tab="base">Base Model Predictions</button>
+      </div>
+
+      <div class="prob-tab-panel" id="tab-ensemble" role="tabpanel">
+        <div class="probability-bars">
+          {% for i in range(result.probabilities|length) %}
+          {% set p = result.probabilities[i] %}
+          <div class="prob-item">
+            <span class="prob-label">{{ result.class_labels[i] }}</span>
+            <div class="prob-bar-container">
+              <div class="prob-bar-fill" style="width: {{ p }}%"></div>
+              <span class="prob-bar-value{% if p < 15 %} is-outside{% endif %}"
+                    style="left: {{ p }}%">{{ p }}%</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="prob-tab-panel is-hidden" id="tab-base" role="tabpanel">
+        {% for model_name, probs in result.base_probs.items() %}
+        <details class="model-details">
+          <summary>{{ model_name }}</summary>
+          <div class="probability-bars small">
+            {% for i in range(probs|length) %}
+            {% set p = probs[i] %}
+            <div class="prob-item">
+              <span class="prob-label">{{ result.class_labels[i] }}</span>
+              <div class="prob-bar-container">
+                <div class="prob-bar-fill" style="width: {{ p }}%"></div>
+                <span class="prob-bar-value{% if p < 15 %} is-outside{% endif %}"
+                      style="left: {{ p }}%">{{ p }}%</span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </details>
+        {% endfor %}
+      </div>
+    </div>
     <!-- Strengths + Improvement Suggestions (stacked, full width) -->
       <div class="result-card">
         <h3>Strengths</h3>
@@ -197,50 +242,7 @@
         {% endif %}
       </div>
 
-    <!-- Combined probabilities card with tab toggle -->
-    <div class="result-card probs-tabbed-card">
-      <div class="prob-tabs" role="tablist">
-        <button class="prob-tab is-active" role="tab" aria-selected="true" aria-controls="tab-ensemble" data-tab="ensemble">Class Probabilities</button>
-        <button class="prob-tab" role="tab" aria-selected="false" aria-controls="tab-base" data-tab="base">Base Model Predictions</button>
-      </div>
 
-      <div class="prob-tab-panel" id="tab-ensemble" role="tabpanel">
-        <div class="probability-bars">
-          {% for i in range(result.probabilities|length) %}
-          {% set p = result.probabilities[i] %}
-          <div class="prob-item">
-            <span class="prob-label">{{ result.class_labels[i] }}</span>
-            <div class="prob-bar-container">
-              <div class="prob-bar-fill" style="width: {{ p }}%"></div>
-              <span class="prob-bar-value{% if p < 15 %} is-outside{% endif %}"
-                    style="left: {{ p }}%">{{ p }}%</span>
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-
-      <div class="prob-tab-panel is-hidden" id="tab-base" role="tabpanel">
-        {% for model_name, probs in result.base_probs.items() %}
-        <details class="model-details" open>
-          <summary>{{ model_name }}</summary>
-          <div class="probability-bars small">
-            {% for i in range(probs|length) %}
-            {% set p = probs[i] %}
-            <div class="prob-item">
-              <span class="prob-label">{{ result.class_labels[i] }}</span>
-              <div class="prob-bar-container">
-                <div class="prob-bar-fill" style="width: {{ p }}%"></div>
-                <span class="prob-bar-value{% if p < 15 %} is-outside{% endif %}"
-                      style="left: {{ p }}%">{{ p }}%</span>
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-        </details>
-        {% endfor %}
-      </div>
-    </div>
 
     <button onclick="window.location.href='/'" class="btn btn-ghost btn-reset" style="align-self:flex-end">Predict another game</button>
   </section>
@@ -347,37 +349,6 @@
       if (age && parseInt(age.value, 10) >= 17) mature.checked = true;
       syncMatureToAge();
     })();
-
-    // ── Reset button ──
-    document.addEventListener("reset", function (e) {
-      if (!e.target || e.target.id !== "prediction-form") return;
-      setTimeout(function () {
-        ["price", "initialprice", "achievement_count"].forEach(function (id) {
-          var el = document.getElementById(id);
-          if (el) delete el.dataset.prevValue;
-        });
-
-        if (window.SAGE_resyncToggles) window.SAGE_resyncToggles();
-        syncMatureToAge();
-
-        var about = document.getElementById("about_length");
-        if (about) about.dispatchEvent(new Event("input", { bubbles: true }));
-
-        var dateInput = document.getElementById("release_date");
-        if (dateInput) dateInput.dispatchEvent(new Event("change", { bubbles: true }));
-
-        document.querySelectorAll("#tag-checklist label, #lang-checklist label").forEach(function (label) {
-          var cb = label.querySelector("input[type='checkbox']");
-          if (cb) label.classList.toggle("is-checked", cb.checked);
-        });
-
-        document.querySelectorAll(".field-error").forEach(function (el) {
-          el.classList.remove("field-error");
-        });
-        var slot = document.querySelector("#validation-alert-slot");
-        if (slot) slot.innerHTML = "";
-      }, 0);
-    });
 
     // ── Prob tab switcher ──
     document.addEventListener("click", function (e) {
