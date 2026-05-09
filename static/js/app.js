@@ -159,6 +159,11 @@
       fetch("/", { method: "POST", body: formData })
         .then((r) => r.text().then((html) => ({ ok: r.ok, status: r.status, html })))
         .then(({ ok, html }) => {
+          // Before the swap — save which sections are currently open
+          const openSections = [];
+          document.querySelectorAll('.form-section').forEach((s, i) => {
+            if (!s.classList.contains('collapsed')) openSections.push(i);
+          });
           const doc = new DOMParser().parseFromString(html, "text/html");
           const newForm = doc.querySelector(".form-panel");
           const newResults = doc.querySelector(".results-panel");
@@ -184,6 +189,13 @@
 
           // Re-bind dynamic content
           bindFormSections(formPanel);
+          // Restore open sections from before the swap
+          formPanel.querySelectorAll('.form-section').forEach((s, i) => {
+            if (openSections.includes(i)) {
+              s.classList.remove('collapsed');
+              s.dataset.kept = '1';
+            }
+          });
           bindForm();
           bindDetailedDescCoupling();
           bindNumericGuards();
