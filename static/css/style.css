@@ -739,6 +739,57 @@ ul, ol { list-style: none; }
 }
 .btn-ghost:hover, .btn-reset:hover { background: var(--bg-sunken); }
 
+
+
+
+/* ── Prob tab strip ── */
+.prob-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  margin-bottom: 1rem;
+}
+
+.prob-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted, #64748b);
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.prob-tab.is-active {
+  color: var(--sage-600);
+  border-bottom-color: var(--sage-600);
+}
+
+.prob-tab-panel.is-hidden {
+  display: none;
+}
+
+/* ── Strengths + Recommendations side by side ── */
+.results-bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .results-bottom-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+
+
 /* ── Download / CTA buttons (e.g. About → Download Thesis) ──────────────── */
 /* Defensive: ensure anchor-styled buttons remain readable in light mode.
    Many download buttons were authored with dark-mode contrast only. */
