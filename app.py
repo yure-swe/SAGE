@@ -35,7 +35,7 @@
 # =============================================================================
 
 import logging
-import os
+import hashlib, os
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 
@@ -51,6 +51,24 @@ from recommender import get_recommendations
 from validation import validate_form_data, FIELD_SPECS
 
 app = Flask(__name__)
+
+# cache buster
+def _file_hash(filename):
+    """Return a short MD5 hash of a static file for cache busting."""
+    path = os.path.join(app.static_folder, filename)
+    try:
+        with open(path, 'rb') as f:
+            return hashlib.md5(f.read()).hexdigest()[:8]
+    except OSError:
+        return 'v1'
+
+@app.context_processor
+def cache_bust():
+    def busted_url(filename):
+        from flask import url_for
+        h = _file_hash(filename)
+        return url_for('static', filename=filename, v=h)
+    return dict(static_url=busted_url)
 
 # ── Hardening: cap request size ───────────────────────────────────────────────
 app.config["MAX_CONTENT_LENGTH"] = 256 * 1024  # 256 KB
