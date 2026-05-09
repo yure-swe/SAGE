@@ -179,6 +179,9 @@
           }
           if (newResults) resultsPanel.innerHTML = newResults.innerHTML;
 
+
+          if (window.SAGE_resyncToggles) window.SAGE_resyncToggles();
+
           // Re-bind dynamic content
           bindFormSections(formPanel);
           bindForm();

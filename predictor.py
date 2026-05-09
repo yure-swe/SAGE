@@ -102,60 +102,7 @@ def compute_weighted_language_score(language_list: list) -> float:
     return round(min(raw / MAX_LANGUAGE_SCORE, 1.0), 4)
 
 
-# =============================================================================
-# HELPER: compute game_age_days from a release date string or datetime
-# =============================================================================
-def compute_game_age_days(release_date_input) -> int:
-    """
-    Accepts:
-      - A datetime object
-      - An ISO date string: "2024-03-15"
-      - A Steam-style string: "Jun 2, 2017" / "Jun 2017" / "2017"
-    Returns integer days since release (0 if unparseable or future date).
-    """
-    if isinstance(release_date_input, datetime):
-        dt = release_date_input
-    else:
-        date_str = str(release_date_input).strip()
-        dt = None
-        for fmt in ("%Y-%m-%d", "%b %d, %Y", "%B %d, %Y", "%b %Y", "%B %Y", "%Y"):
-            try:
-                dt = datetime.strptime(date_str, fmt)
-                break
-            except ValueError:
-                continue
-        if dt is None:
-            return 0
-    age = (datetime.today() - dt).days
-    return max(age, 0)
 
-
-# =============================================================================
-# HELPER: human-readable age context string for output label
-# =============================================================================
-def format_age_context(game_age_days: int) -> str:
-    """
-    Converts game_age_days to a readable string for the output label.
-    e.g. 0 days → "at launch", 365 days → "~1 year on Steam", etc.
-    """
-    if game_age_days <= 30:
-        return "at launch"
-    elif game_age_days < 365:
-        months = round(game_age_days / 30)
-        return f"~{months} month{'s' if months != 1 else ''} on Steam"
-    else:
-        years  = game_age_days / 365
-        if years < 1.5:
-            return "~1 year on Steam"
-        else:
-            return f"~{years:.1f} years on Steam"
-
-
-# =============================================================================
-# CORE: compute_derived_features
-# Mirrors enrich_prelaunch.py v2 formulas exactly.
-# Called BEFORE build_feature_vector so the full feature set is available.
-# =============================================================================
 def compute_derived_features(form_data: dict) -> dict:
     """
     Compute all composite/derived features from raw form inputs.
@@ -182,6 +129,34 @@ def compute_derived_features(form_data: dict) -> dict:
         except (ValueError, TypeError):
             return float(default)
 
+    # Derive release timing features from user-supplied release_date
+    release_date_str = form_data.get("release_date", "")
+    release_dt = None
+    if release_date_str:
+        try:
+            release_dt = datetime.strptime(str(release_date_str).strip(), "%Y-%m-%d")
+        except ValueError:
+            pass
+
+    if release_dt:
+        form_data["release_month"]      = release_dt.month
+        form_data["release_quarter"]    = (release_dt.month - 1) // 3 + 1
+        form_data["release_dayofweek"]  = release_dt.weekday()
+        form_data["release_is_q4"]      = 1 if release_dt.month in (10, 11, 12) else 0
+        form_data["release_is_holiday"] = 1 if (
+            (release_dt.month == 11 and release_dt.day >= 15) or release_dt.month == 12
+        ) else 0
+        form_data["release_is_summer"]  = 1 if release_dt.month in (6, 7, 8) else 0
+        form_data["release_is_tuesday"] = 1 if release_dt.weekday() == 1 else 0
+    else:
+        # Fallback: neutral/median values if no date provided
+        form_data["release_month"]      = 6
+        form_data["release_quarter"]    = 2
+        form_data["release_dayofweek"]  = 0
+        form_data["release_is_q4"]      = 0
+        form_data["release_is_holiday"] = 0
+        form_data["release_is_summer"]  = 0
+        form_data["release_is_tuesday"] = 0
     # ── Price: form submits USD (e.g. 9.99); model was trained on cents (999) ─
     d["price"]        = round(f("price")        * 100)
     d["initialprice"] = round(f("initialprice") * 100)
@@ -330,16 +305,12 @@ def predict(form_data: dict) -> dict:
     except Exception as exc:
         raise RuntimeError(f"Prediction pipeline failure: {exc}") from exc
 
-    # 5. Build game_age context string for UI
-    game_age_days = int(float(form_data.get("game_age_days", 0)))
-    age_context   = format_age_context(game_age_days)
 
     # 6. Output label — "lifetime" framing with age context
     class_info   = CLASS_RANGES.get(predicted_class, _UNKNOWN_CLASS)
     output_label = (
         f"Predicted lifetime owner tier — estimated total owners your game is "
         f"likely to accumulate over its commercial lifespan on Steam "
-        f"({age_context})."
     )
 
     return {
@@ -356,7 +327,5 @@ def predict(form_data: dict) -> dict:
             "Gradient Boosting": [round(float(p) * 100, 1) for p in gb_probs[0]],
             "XGBoost":           [round(float(p) * 100, 1) for p in xgb_probs[0]],
         },
-        "game_age_days":    game_age_days,
-        "game_age_context": age_context,
         "output_label":     output_label,
     }

@@ -26,11 +26,11 @@
             <span class="stat-label">Games (rows)</span>
         </div>
         <div class="stat-card">
-            <span class="stat-value">109</span>
+            <span class="stat-value">114</span>
             <span class="stat-label">Columns total (including top-50 tags)</span>
         </div>
         <div class="stat-card">
-            <span class="stat-value">94</span>
+            <span class="stat-value">99</span>
             <span class="stat-label">Pre-launch features used (including top-50 tags)</span>
         </div>
         <div class="stat-card">
@@ -165,7 +165,7 @@
 
     <!-- ===================== FEATURES ===================== -->
     <section class="dataset-section">
-        <h2>4 · Pre-launch features (94)</h2>
+        <h2>4 · Pre-launch features (99)</h2>
         <p class="section-intro">One-hot encoded top-50 tags (tag_*) included; only signals that exist <em>before</em> a game
         ships are used. Grouped by origin:</p>
 
@@ -174,7 +174,13 @@
                 <h4>Pricing &amp; release</h4>
                 <ul class="chips">
                     <li>price</li><li>initialprice</li><li>is_free</li>
-                    <li>release_month</li><li>game_age_days</li>
+                    <li>release_month</li>
+                    <li>release_quarter</li>
+                    <li>release_dayofweek</li>
+                    <li>release_is_q4</li>
+                    <li>release_is_holiday</li>
+                    <li>release_is_summer</li>
+                    <li>release_is_tuesday</li>
                 </ul>
             </div>
             <div class="feature-group">
@@ -263,7 +269,7 @@
             </div>
             <div class="script-card output">
                 <code>steam_10k_prelaunch.csv</code>
-                <span>Final 10,000 × 109 training file consumed by the model.</span>
+                <span>Final 10,000 × 114 training file consumed by the model.</span>
             </div>
         </div>
     </section>

@@ -63,8 +63,8 @@
         <p>From raw Steam data, pre-launch features were extracted and engineered, including tag binary columns dynamically read from the dataset:</p>
         <ul>
             
-<li><strong>Raw (34):</strong> 
-<code>price</code>, <code>initialprice</code>, <code>is_free</code>, <code>release_month</code>, <code>required_age</code>, 
+<li><strong>Raw (33):</strong> 
+<code>price</code>, <code>initialprice</code>, <code>is_free</code>, <code>required_age</code>, 
 <code>has_website</code>, <code>has_support_email</code>, 
 <code>platform_windows</code>, <code>platform_mac</code>, <code>platform_linux</code>, 
 <code>screenshot_count</code>, <code>about_length</code>, <code>short_desc_length</code>, <code>has_detailed_desc</code>, 
@@ -77,12 +77,12 @@
 <code>genre_strategy</code>, <code>genre_simulation</code>, <code>genre_sports</code>, <code>genre_racing</code>
 </li>
 
-            <li><strong>Engineered Scalar [Numeric] (3):</strong> 
-<code>game_age_days</code>, <code>weighted_language_score</code>, <code>platform_count</code>
-</li>
+            <li><strong>Engineered Scalar [Numeric] (5):</strong> 
+              <code>weighted_language_score</code>, <code>platform_count</code>, <code>release_month</code>, <code>release_quarter</code>, <code>release_dayofweek</code></li>
 
-<li><strong>Engineered Binary [0/1] (53):</strong> 
-  <code>has_detailed_desc</code>, <code>is_mature_content</code>, <code>is_multiplayer</code>, 50 x <code>tag_*</code> (e.g., <code>tag_action</code>, <code>tag_rpg</code>, <code>tag_strategy</code>)
+<li><strong>Engineered Binary [0/1] (57):</strong> 
+  <code>has_detailed_desc</code>, <code>is_mature_content</code>, <code>is_multiplayer</code>, <code>release_is_q4</code>, <code>release_is_holiday</code>, <code>release_is_summer</code>, <code>release_is_tuesday</code>
+, 50 x <code>tag_*</code> (e.g., <code>tag_action</code>, <code>tag_rpg</code>, <code>tag_strategy</code>)
  <!-- ... up to top-50 tags -->
 </li>
 
@@ -91,8 +91,8 @@
 </li>
         <h3>Headline results</h3>
         <div class="metrics-grid" style="margin-top:8px">
-            <div class="metric-tile"><div class="label">Weighted F1</div><div class="value">0.6292</div></div>
-            <div class="metric-tile"><div class="label">Macro F1</div><div class="value">0.2954</div></div>
+            <div class="metric-tile"><div class="label">Weighted F1</div><div class="value">0.6170</div></div>
+            <div class="metric-tile"><div class="label">Macro F1</div><div class="value">0.2753</div></div>
             <div class="metric-tile"><div class="label">Accuracy</div><div class="value">71.20%</div></div>
         </div>
     </div>

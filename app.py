@@ -44,7 +44,6 @@ from flask import Flask, render_template, request, jsonify
 from predictor import (
     predict,
     compute_derived_features,
-    compute_game_age_days,
     ALL_FEATURES, TAG_FEATURES, CLASS_RANGES, N_CLASSES,
     LANGUAGE_WEIGHTS,
 )
@@ -91,7 +90,7 @@ FORM_SECTIONS = [
     {
         "title": "💰 Pricing",
         "fields": [
-            {"name": "is_free",       "label": "Free to Play?",      "type": "toggle", "default": 0},
+            {"name": "is_free",       "label": "Free to Play?",      "type": "toggle", "default": 0, "controls_number": "price, initialprice", "forced_value": 0},
             {"name": "price",         "label": "Price (0 - 200 USD)",         "type": "number",
              "default": 9.99, "min": 0, "max": 200, "step": 0.01},
             {"name": "initialprice",  "label": "Initial Price (0 - 200 USD)", "type": "number",
@@ -99,18 +98,12 @@ FORM_SECTIONS = [
         ]
     },
     {
-        # Release date as a date-picker; game_age_days is computed server-side.
-        # Users planning a future/past launch can set this accordingly.
+        # Release date as a date-picker; 
         "title": "🗓️ Release",
         "fields": [
-            {"name": "release_date",  "label": "Release Date (or planned launch date)",
+            {"name": "release_date",  "label": "Release Date",
              "type": "date", "default": datetime.today().strftime("%Y-%m-%d"),
-             "help": ("Used to compute how long the game has been (or will be) on Steam. "
-                      "Set to your planned launch date for pre-launch predictions.")},
-            {"name": "release_month", "label": "Release Month (auto)", "type": "select",
-             "options": ["1=January","2=February","3=March","4=April","5=May","6=June",
-                         "7=July","8=August","9=September","10=October","11=November","12=December"],
-             "default": datetime.today().month, "hidden": True},
+             "help": "Planned date the game will launch on Steam."}
         ]
     },
     {
@@ -152,7 +145,7 @@ FORM_SECTIONS = [
             },
             {"name": "supported_languages_count",  "label": "Text Languages (auto-count)",
              "type": "number", "default": 1, "min": 0, "max": 50, "step": 1, "hidden": True},
-            {"name": "full_audio_languages_count", "label": "Full Audio Languages",
+            {"name": "full_audio_languages_count", "label": "Full Audio Languages (0 - 20)",
              "type": "number", "default": 0, "min": 0, "max": 20, "step": 1, "help": "Number of languages with full voice-over support."},
         ]
     },
@@ -163,9 +156,9 @@ FORM_SECTIONS = [
              "type": "toggle", "default": 0},
             {"name": "has_support_email", "label": "Has Support Email?",
              "type": "toggle", "default": 0},
-            {"name": "screenshot_count",  "label": "Number of Screenshots",
+            {"name": "screenshot_count",  "label": "Number of Screenshots (0 - 20)",
              "type": "number", "default": 5,   "min": 0, "max": 20, "step": 1},
-            {"name": "about_length",      "label": "Description Length (chars)",
+            {"name": "about_length",      "label": "Description Length (0 - 5000 chars)",
              "type": "number", "default": 500, "min": 0, "max": 5000, "step": 10,
              "hint": ">500 chars automatically sets the Detailed Description flag."},
             {"name": "has_detailed_desc", "label": "Detailed Description (auto)",
@@ -176,7 +169,7 @@ FORM_SECTIONS = [
     {
         "title": "🏆 Categories",
         "fields": [
-            {"name": "has_achievements",      "label": "Steam Achievements?",   "type": "toggle", "default": 0},
+            {"name": "has_achievements",      "label": "Steam Achievements?",   "type": "toggle", "default": 0, "controls_number": "achievement_count", "forced_value": 0, "invert": True},
             {"name": "has_cloud_save",        "label": "Steam Cloud Save?",     "type": "toggle", "default": 0},
             {"name": "has_controller_support","label": "Controller Support?",   "type": "toggle", "default": 0},
             {"name": "has_vr_support",        "label": "VR Support?",           "type": "toggle", "default": 0},
@@ -185,7 +178,7 @@ FORM_SECTIONS = [
             # category_count is auto-derived from the toggles above + is_multiplayer
             {"name": "category_count",        "label": "Total Steam Categories (auto)",
              "type": "number", "default": 0, "min": 0, "max": 15, "step": 1, "hidden": True},
-            {"name": "achievement_count",     "label": "Number of Achievements",
+            {"name": "achievement_count",     "label": "Number of Achievements (0 - 500)",
              "type": "number", "default": 0, "min": 0, "max": 500, "step": 1},
         ]
     },
@@ -201,8 +194,8 @@ FORM_SECTIONS = [
             # in compute_derived_features (required_age >= 17 -> mature) still works.
             {"name": "is_mature_content", "label": "Mature Content?",
              "type": "toggle", "default": 0, "help": "Does it include contents like violence, nudity, and/or strong language?"},
-            {"name": "required_age",     "label": "Required Age",
-             "type": "number", "default": 0, "min": 0, "max": 18, "step": 1,
+            {"name": "required_age",     "label": "Required Age (auto, derived from mature content)",
+             "type": "number", "default": 0, "min": 0, "max": 17, "step": 1,
              "hidden": True},
         ]
     },
@@ -228,9 +221,9 @@ FORM_SECTIONS = [
     {
         "title": "📦 Packaging",
         "fields": [
-            {"name": "package_count", "label": "Package Count",
+            {"name": "package_count", "label": "Package Count (1 - 10)",
              "type": "number", "default": 1, "min": 1, "max": 10, "step": 1},
-            {"name": "sku_count",     "label": "SKU Count",
+            {"name": "sku_count",     "label": "SKU Count (1 - 20)",
              "type": "number", "default": 1, "min": 1, "max": 20, "step": 1},
         ]
     },
@@ -250,10 +243,10 @@ ALL_TOGGLE_FIELDS = [
 # ── Model performance metrics (for /model-info page) ─────────────────────────
 # NOTE: Update these after retraining with v2 feature set.
 MODEL_METRICS = {
-    "ensemble":          {"weighted_f1": 0.6292, "macro_f1": 0.2954, "accuracy": 0.712},
-    "random_forest":     {"weighted_f1": 0.6239, "macro_f1": 0.2782, "accuracy": 0.6925},
-    "gradient_boosting": {"weighted_f1": 0.6327, "macro_f1": 0.2997, "accuracy": 0.7075},
-    "xgboost":           {"weighted_f1": 0.6093, "macro_f1": 0.2954, "accuracy": 0.5695},
+    "ensemble":          {"weighted_f1": 0.617,  "macro_f1": 0.2753, "accuracy": 0.712},
+    "random_forest":     {"weighted_f1": 0.6087, "macro_f1": 0.2579, "accuracy": 0.675},
+    "gradient_boosting": {"weighted_f1": 0.6145, "macro_f1": 0.2733, "accuracy": 0.7075},
+    "xgboost":           {"weighted_f1": 0.5776, "macro_f1": 0.2983, "accuracy": 0.5355},
 }
 DATASET_INFO = {
     "total_games":       10000,
@@ -290,19 +283,7 @@ def preprocess_form(raw_form: dict) -> dict:
         if field not in d:
             d[field] = 0
 
-    # 2. game_age_days from release_date
-    release_date_str = d.get("release_date", "")
-    if release_date_str:
-        d["game_age_days"] = compute_game_age_days(release_date_str)
-        # Also set release_month if not already provided
-        if "release_month" not in d or not str(d.get("release_month", "")).strip():
-            try:
-                dt = datetime.strptime(str(release_date_str).strip(), "%Y-%m-%d")
-                d["release_month"] = dt.month
-            except ValueError:
-                d.setdefault("release_month", datetime.today().month)
-    else:
-        d.setdefault("game_age_days", 0)
+
 
     # 3. selected_languages: getlist handles multi-select in Flask
     # (When called from /api/predict with JSON, selected_languages arrives as a list.)

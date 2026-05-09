@@ -1,21 +1,3 @@
-# =============================================================================
-# recommender.py — Prescriptive Recommendations Logic  (v2)
-# =============================================================================
-# Loads prescriptive_rules.csv once at startup.
-# Generates actionable recommendations based on user input + SHAP rules.
-#
-# Changes from v1:
-#   - Removed stale FEATURE_LABELS and RECOMMENDATIONS for dropped features:
-#       has_trailer, trailer_count, has_trading_cards, has_workshop,
-#       dlc_count, has_publisher, is_solo_dev, publisher_backing
-#   - Added labels/recommendations for:
-#       weighted_language_score, game_age_days, tag binary features
-#   - Tag binary features are handled generically (dynamic from TAG_FEATURES)
-#   - weighted_language_score replaces supported_languages_count as the
-#     primary language signal
-#   - "positives" now also checks weighted_language_score and tag coverage
-# =============================================================================
-
 import os
 import pandas as pd
 
@@ -35,7 +17,12 @@ FEATURE_LABELS = {
     "is_free":                    "Free to Play",
     # Timing
     "release_month":              "Release Month",
-    "game_age_days":              "Time on Steam",
+    "release_quarter":            "Release Quarter",
+    "release_dayofweek":          "Release Day of Week",
+    "release_is_q4":              "Q4 Release",
+    "release_is_holiday":         "Holiday Window Release",
+    "release_is_summer":          "Summer Release",
+    "release_is_tuesday":         "Tuesday Release",
     # Store page
     "screenshot_count":           "Screenshot Count",
     "about_length":               "Description Length",
@@ -65,7 +52,6 @@ FEATURE_LABELS = {
     "category_count":             "Steam Categories",
     # Tags
     "tag_count":                  "Number of Tags",
-
     "is_multiplayer":             "Multiplayer",
     # Packaging
     "package_count":              "Package Count",
@@ -76,6 +62,35 @@ FEATURE_LABELS = {
     "localization_score":         "Localization Score",
     "steam_integration":          "Steam Integration Score",
     "platform_reach":             "Platform Reach Score",
+}
+
+# ── Thresholds for genuine positives ─────────────────────────────────────────
+# A positive is only surfaced when the user has meaningfully configured
+# a feature well — not just because a default happened to be 1 or 0.
+POSITIVE_THRESHOLDS = {
+    "screenshot_count":           5,
+    "supported_languages_count":  5,
+    "full_audio_languages_count": 1,
+    "weighted_language_score":    0.30,
+    "achievement_count":          10,
+    "category_count":             5,
+    "tag_count":                  8,
+    "about_length":               500,
+    "has_achievements":           0.5,
+    "has_cloud_save":             0.5,
+    "has_controller_support":     0.5,
+    "has_website":                0.5,
+    "has_support_email":          0.5,
+    "has_family_sharing":         0.5,
+    "is_multiplayer":             0.5,
+    "platform_count":             2,
+    "store_page_score":           0.5,
+    "localization_score":         0.30,
+    "marketing_score":            0.30,
+    "steam_integration":          0.40,
+    # Release timing positives
+    "release_is_summer":          0.5,   # planned for summer
+    "release_is_tuesday":         0.5,   # planned for a Tuesday
 }
 
 # ── Static recommendation rules ───────────────────────────────────────────────
@@ -166,6 +181,39 @@ RECOMMENDATIONS = {
         "If your game has any VR compatibility, flag it — VR users actively search "
         "Steam for VR-compatible titles and it increases discoverability."
     ),
+    # ── Release timing recommendations ────────────────────────────────────────
+    "release_month": (
+        lambda v: v in (1, 2, 8),
+        "Your planned release month is historically quieter on Steam. "
+        "Consider targeting March–May or October–November — these windows "
+        "see higher player activity and media coverage without the extreme "
+        "competition of the December holiday rush."
+    ),
+    "release_is_q4": (
+        lambda v: v == 1,
+        "Q4 releases (October–December) face the steepest competition on Steam — "
+        "major publishers and holiday titles dominate visibility. If your marketing "
+        "budget is limited, a Q1 or Q2 launch may give you more room to stand out."
+    ),
+    "release_is_holiday": (
+        lambda v: v == 1,
+        "Releasing during the holiday window (mid-November through December) means "
+        "competing directly with Steam's biggest sales events. Unless you have a "
+        "strong marketing push planned, consider launching just before — "
+        "early-to-mid November tends to capture pre-holiday attention."
+    ),
+    "release_is_summer": (
+        lambda v: v == 0,
+        "Summer (June–August) is a solid release window — player activity rises "
+        "and the Steam Summer Sale draws traffic to the platform. "
+        "If your timeline is flexible, this window can provide a natural visibility boost."
+    ),
+    "release_is_tuesday": (
+        lambda v: v == 0,
+        "Tuesday is the conventional Steam release day — it maximises the window "
+        "before the weekend traffic peak. If your planned date falls on another weekday, "
+        "consider shifting it by a day or two."
+    ),
 }
 
 
@@ -208,7 +256,6 @@ def get_recommendations(form_data: dict, predicted_class: int,
 
     for _, rule_row in sorted_rules.iterrows():
         feat      = rule_row["feature"]
-        direction = rule_row["direction"]
         impact    = rule_row["impact_score"]
 
         if feat not in form_data:
@@ -221,22 +268,14 @@ def get_recommendations(form_data: dict, predicted_class: int,
 
         label = _label_for(feat)
 
-        # ── Positives: feature is already contributing favourably ─────────────
-        if direction == "higher is better" and val > 0.5:
+        # ── Positives: only flag genuine strengths above meaningful thresholds ─
+        if feat in POSITIVE_THRESHOLDS and val >= POSITIVE_THRESHOLDS[feat]:
             positives.append({
                 "feature": feat,
                 "label":   label,
                 "value":   val,
                 "impact":  round(impact, 4),
                 "message": f"{label} is working in your favour.",
-            })
-        elif direction == "lower is better" and val < 0.5:
-            positives.append({
-                "feature": feat,
-                "label":   label,
-                "value":   val,
-                "impact":  round(impact, 4),
-                "message": f"{label} is appropriately set.",
             })
 
         # ── Improvements: static rules for specific features ──────────────────
@@ -252,7 +291,6 @@ def get_recommendations(form_data: dict, predicted_class: int,
                 })
 
     # ── Generic tag improvement: if user has few tags selected ────────────────
-    # Check tag binary columns (tag_*) — if almost none selected, flag it
     tag_cols_selected = sum(
         1 for k, v in form_data.items()
         if k.startswith("tag_") and k != "tag_count"
@@ -297,7 +335,7 @@ def get_recommendations(form_data: dict, predicted_class: int,
             "label":   "Game Profile",
             "value":   1,
             "impact":  0.0,
-            "message": "Your game profile has been analysed successfully.",
+            "message": "Your game profile has been analysed. Improve the areas flagged below to increase your predicted reach.",
         })
 
     return {
