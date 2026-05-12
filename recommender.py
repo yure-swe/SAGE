@@ -66,7 +66,6 @@ FEATURE_LABELS = {
 
 # ── Thresholds for genuine positives ─────────────────────────────────────────
 # A positive is only surfaced when the user has meaningfully configured
-# a feature well — not just because a default happened to be 1 or 0.
 POSITIVE_THRESHOLDS = {
     "screenshot_count":           5,
     "supported_languages_count":  5,
@@ -94,11 +93,6 @@ POSITIVE_THRESHOLDS = {
 }
 
 # ── Static recommendation rules ───────────────────────────────────────────────
-# Maps feature name → (condition_fn, recommendation_text)
-# condition_fn(value) returns True when the recommendation applies.
-#
-# NOTE: Tag binary features (tag_*) are handled generically below.
-#       Only features actually in the v2 model appear here.
 RECOMMENDATIONS = {
     "screenshot_count": (
         lambda v: v < 5,
@@ -233,8 +227,8 @@ def get_recommendations(form_data: dict, predicted_class: int,
 
     Parameters
     ----------
-    form_data        : dict — cleaned + derived form input
-    predicted_class  : int  — predicted owner tier class (0–5)
+    form_data: dict — cleaned + derived form input
+    predicted_class: int  — predicted owner tier class (0–5)
     max_recommendations : int — max items per list
 
     Returns

@@ -1,20 +1,3 @@
-# =============================================================================
-# predictor.py — Model Loading & Prediction Logic  (v2)
-# =============================================================================
-# Loads all .pkl files ONCE at startup (not per request).
-# Exposes a single predict() function used by app.py.
-#
-# Changes from v1:
-#   - Removed deprecated features from build_feature_vector:
-#       has_trailer, trailer_count, has_trading_cards, has_workshop,
-#       dlc_count, is_solo_dev, has_publisher, publisher_count,
-#       developer_count, publisher_backing, has_multiplayer_tag, Indie
-#   - Added game_age_days to CLASS_RANGES display context
-#   - Tag binary features handled automatically via feature_dict["tag_features"]
-#   - compute_derived_features mirrors enrich_prelaunch.py v2 formulas exactly
-#   - Output dict now includes game_age_context string for UI display
-# =============================================================================
-
 import os
 import re
 from datetime import datetime
@@ -71,7 +54,6 @@ LANGUAGE_WEIGHTS = {
 }
 MAX_LANGUAGE_SCORE = sum(LANGUAGE_WEIGHTS.values())
 
-# ── Class metadata ────────────────────────────────────────────────────────────
 CLASS_RANGES = {
     0: {"label": "≤10K",   "range": "Up to 10,000 owners",         "tier": "Common Indie"},
     1: {"label": "≤35K",   "range": "10,000 – 35,000 owners",      "tier": "Niche"},
@@ -83,10 +65,8 @@ CLASS_RANGES = {
 _UNKNOWN_CLASS = {"label": "Unknown", "range": "Unknown", "tier": "Unknown"}
 
 
-# =============================================================================
 # HELPER: tag name → column name
 # Must mirror enrich_prelaunch.py's tag_to_col() exactly.
-# =============================================================================
 def tag_to_col(tag_name: str) -> str:
     col = tag_name.lower().strip()
     col = re.sub(r"[^a-z0-9\s]", "", col)
@@ -94,9 +74,7 @@ def tag_to_col(tag_name: str) -> str:
     return f"tag_{col}"
 
 
-# =============================================================================
 # HELPER: compute weighted language score from a list of language names
-# =============================================================================
 def compute_weighted_language_score(language_list: list) -> float:
     raw = sum(LANGUAGE_WEIGHTS.get(lang.strip(), 0.0) for lang in language_list)
     return round(min(raw / MAX_LANGUAGE_SCORE, 1.0), 4)
@@ -196,7 +174,7 @@ def compute_derived_features(form_data: dict) -> dict:
         f("is_multiplayer")
     )
 
-    # ── store_page_score (v2: no has_trailer term) ────────────────────────────
+    # ── store_page_score 
     d["store_page_score"] = (
         min(f("screenshot_count"), 10) / 10 * 0.40 +
         f("has_detailed_desc")            * 0.25 +
@@ -208,14 +186,14 @@ def compute_derived_features(form_data: dict) -> dict:
     # ── platform_reach ────────────────────────────────────────────────────────
     d["platform_reach"] = platform_count / 3.0
 
-    # ── marketing_score (v2: no has_trailer term) ─────────────────────────────
+    # ── marketing_score 
     d["marketing_score"] = (
         f("has_website")                              * 0.35 +
         min(f("screenshot_count"), 10) / 10 * 0.45 +
         f("has_support_email")                        * 0.20
     )
 
-    # ── steam_integration (v2: no trading_cards / workshop) ───────────────────
+    # ── steam_integration
     d["steam_integration"] = (
         f("has_achievements")        * 0.35 +
         f("has_cloud_save")          * 0.25 +
@@ -232,9 +210,7 @@ def compute_derived_features(form_data: dict) -> dict:
     return d
 
 
-# =============================================================================
 # CORE: build_feature_vector
-# =============================================================================
 def build_feature_vector(form_data: dict) -> pd.DataFrame:
     """
     Convert raw (already-validated + derived) form input into a properly
@@ -260,9 +236,7 @@ def build_feature_vector(form_data: dict) -> pd.DataFrame:
     return X_scaled
 
 
-# =============================================================================
 # PUBLIC API: predict()
-# =============================================================================
 def predict(form_data: dict) -> dict:
     """
     Run the full stacked ensemble prediction pipeline.

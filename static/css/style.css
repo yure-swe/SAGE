@@ -1,11 +1,3 @@
-/* =============================================================================
-   SAGE — Redesigned stylesheet
-   Editorial dashboard, sage-forward palette, light + dark, fully responsive.
-   Drop-in replacement for static/css/style.css. No HTML class hooks were
-   removed; all dashboard.html selectors used by the AJAX swap still exist.
-   ============================================================================= */
-
-/* ── Design tokens ──────────────────────────────────────────────────────── */
 :root {
   /* Brand */
   --sage-50:  #f3f6f1;
@@ -13,7 +5,7 @@
   --sage-200: #cbd6c2;
   --sage-300: #a8b89c;
   --sage-400: #859877;
-  --sage-500: #6d7a63;   /* original brand */
+  --sage-500: #6d7a63;   
   --sage-600: #55604d;
   --sage-700: #424b3c;
   --sage-800: #2f352b;
@@ -81,7 +73,7 @@
 [data-theme="dark"] {
   --bg:          #14181a;
   --bg-elevated: #1c2124;
-  --bg-sunken:   #10141a;   /* fixed: was unset, caused unreadable text in dark mode */
+  --bg-sunken:   #10141a;  
   --bg-sidebar:  #161a1d;
   --bg-overlay:  rgba(0, 0, 0, 0.65);
 
@@ -93,7 +85,7 @@
   --border-strong: #34403a;
   --ring:          rgba(168, 184, 156, 0.45);
 
-  --sage-500: #a8b89c;       /* lift brand for contrast on dark */
+  --sage-500: #a8b89c;       
   --sage-600: #c2cdb8;
 
   --success-bg: rgba(79,138,79,0.16);
@@ -788,13 +780,6 @@ ul, ol { list-style: none; }
   }
 }
 
-
-
-
-
-/* ── Download / CTA buttons (e.g. About → Download Thesis) ──────────────── */
-/* Defensive: ensure anchor-styled buttons remain readable in light mode.
-   Many download buttons were authored with dark-mode contrast only. */
 a.btn,
 .btn-download,
 .btn-thesis,
@@ -998,9 +983,7 @@ a.btn-outline:hover,
   width: 0;
   animation: grow 0.9s var(--ease) forwards;
 }
-/* The % label is anchored to the END of the fill via inline `left: <pct>%`.
-   - Default (wide enough): sits INSIDE the fill, right-aligned, white text.
-   - .is-outside (fill < 15%): sits OUTSIDE the fill, left-aligned, muted text. */
+
 .prob-bar-value {
   position: absolute;
   top: 50%;
@@ -1309,9 +1292,6 @@ a.btn-outline:hover,
   .card, .result-card { box-shadow: none; border-color: #ccc; }
 }
 
-/* =============================================================================
-   DATASET PAGE
-   ============================================================================= */
 .dataset-page {
   max-width: 1080px;
   margin: 0 auto;

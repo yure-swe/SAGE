@@ -1,48 +1,44 @@
+# Composite Features
+
 ### store_page_score
-Measures overall quality and completeness of a game’s Steam store page.  
-- Combines visuals (screenshots, trailer), written content (detailed description), accessibility (languages), and credibility (website, support email).  
-- Heavily weighted toward screenshots (30%) and trailer presence (25%) since these strongly influence first impressions.  
-- Uses caps (e.g., max 10 screenshots, 20 languages) to prevent extreme values from dominating.
+Measures overall quality and completeness of a game's Steam store page.
+- Combines visual assets (screenshots, 40%), written content (detailed description, 25%), language accessibility (weighted language score, 20%), and credibility signals (official website, 10%; support email, 5%).
+- Screenshot count is capped at 10 to prevent extreme values from dominating.
+- `has_detailed_desc` is automatically derived: it is set to 1 if `about_length` exceeds 500 characters, otherwise 0.
 
 ---
 
 ### platform_reach
-Represents how widely the game is available across platforms.  
-- Computed as `platform_count / 3.0` assuming up to 3 major platforms.  
+Represents how widely the game is available across platforms.
+- Computed as `platform_count / 3.0`, assuming up to 3 major platforms (Windows, Mac, Linux).
 - Higher values indicate broader accessibility and potential audience size.
 
 ---
 
 ### is_mature_content
-Binary flag indicating whether the game targets mature audiences.  
-- `True` if `required_age >= 17`, otherwise `0`.  
+Binary flag indicating whether the game targets mature audiences.
+- Set to 1 if `required_age >= 17`, otherwise 0.
 - Included because age-restricted games typically have a smaller addressable market.
 
 ---
 
 ### marketing_score
-Proxy for marketing effort and visibility.  
-- Combines presence of an official website (30%) and visual assets (screenshots, 70%).  
-- Assumes more screenshots and a website correlate with stronger promotion.
-
----
-
-### publisher_backing
-Estimates the level of publisher support behind the game.  
-- Based on whether a publisher exists (60%) and how many publishers are involved (40%, capped at 3).  
-- Higher values suggest more resources, funding, or distribution support.
+Proxy for a game's marketing effort and external visibility.
+- Combines visual assets (screenshots, 45%), official website presence (35%), and support email presence (20%).
+- Screenshot count is capped at 10.
+- Trailer presence is no longer included in v2 as it was found to carry no predictive signal in the training data.
 
 ---
 
 ### localization_score
-Captures how well the game is adapted for global audiences.  
-- Based on supported languages (70%) and full audio languages (30%).  
-- Reflects both accessibility (text) and deeper localization (voice).
+Captures how well the game is adapted for global audiences.
+- Weighted combination of `weighted_language_score` (75%) and full audio language coverage (25%, capped at 10 languages).
+- `weighted_language_score` accounts for which languages are supported, not just how many, reflecting the relative market size of each language on Steam.
 
 ---
 
 ### steam_integration
-Measures how well the game utilizes Steam platform features.  
-- Includes achievements, trading cards, cloud saves, workshop, controller support, and family sharing.  
-- Workshop (20%) and achievements (25%) are weighted higher due to stronger engagement impact.  
-- Reflects player retention and ecosystem engagement rather than direct marketing.
+Measures how deeply the game utilizes Steam platform features.
+- Combines Steam Achievements (35%), Cloud Save (25%), Controller Support (25%), and Family Sharing (15%).
+- Trading cards and Workshop are no longer included in v2 as both were post-success indicators rather than pre-launch decisions.
+- Reflects player retention and ecosystem engagement potential.

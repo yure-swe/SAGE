@@ -1,13 +1,3 @@
-/* =============================================================================
-   SAGE — frontend behaviors
-   - Theme toggle (persisted)
-   - Sidebar collapse (desktop) and off-canvas drawer (mobile)
-   - Form section collapse with field-completion counter
-   - AJAX submit with loading state, preserves the existing fetch contract
-   - Confidence ring + animated probability bars on result render
-   - Lightbox for SHAP/model images
-   - Scrollspy for the guide page TOC
-   ============================================================================= */
 (function () {
   "use strict";
 
@@ -117,10 +107,6 @@
   // ── Result animations ────────────────────────────────────────────────────
   function animateResults(root) {
     const scope = root || document;
-
-    // Confidence ring: read either a [data-confidence] hook or fall back to
-    // parsing the legacy ".confidence-meter span" text the original template
-    // produces, so this works whether or not the template was updated.
     const ring = scope.querySelector(".confidence-ring");
     if (ring) {
       let pct = parseFloat(ring.dataset.confidence);

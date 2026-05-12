@@ -1,42 +1,5 @@
-# =============================================================================
-# validation.py — Server-Side Input Validation  (v2)
-# =============================================================================
-# Validates and coerces all form / API inputs before they reach predictor.py.
-#
-# Changes from v1:
-#   REMOVED from FIELD_SPECS (dropped from model):
-#     - has_trailer, trailer_count
-#     - has_trading_cards, has_workshop
-#     - dlc_count
-#     - is_solo_dev, has_publisher, publisher_count, developer_count
-#     - has_multiplayer_tag
-#     - json_price_raw, has_support_url, publisher_backing
-#     - Indie (genre flag)
-#
-#   ADDED to FIELD_SPECS:
-#     - game_age_days         (computed from release_date; 0 = launch day)
-#     - weighted_language_score (0.0–1.0 normalized)
-#     - short_desc_length     (if present in CSV)
-#
-#   NOTES:
-#     - Tag binary columns (tag_*) are validated dynamically — any 0/1 column
-#       that starts with tag_ passes through without being listed in FIELD_SPECS.
-#     - weighted_language_score and game_age_days are computed by preprocess_form()
-#       before validate_form_data() is called, so they are expected to be present.
-# =============================================================================
-
 from __future__ import annotations
 from typing import Any
-
-# ---------------------------------------------------------------------------
-# FIELD_SPECS
-# ---------------------------------------------------------------------------
-# Each entry: (type_fn, min_val, max_val, default)
-#   type_fn   — callable to coerce the raw string value
-#   min_val   — inclusive lower bound (None = no check)
-#   max_val   — inclusive upper bound (None = no check)
-#   default   — value used if field is missing from the submission
-# ---------------------------------------------------------------------------
 
 FIELD_SPECS: dict[str, tuple] = {
     # ── Pricing ───────────────────────────────────────────────────────────────
@@ -102,7 +65,6 @@ FIELD_SPECS: dict[str, tuple] = {
     "sku_count":                    (int,    1,      50,      1),
 
     # ── Derived composite scores (computed by predictor.compute_derived_features)
-    # Listed here so validation accepts them if submitted; defaults prevent errors.
     "store_page_score":             (float,  0.0,    1.0,     0.0),
     "platform_reach":               (float,  0.0,    1.0,     0.0),
     "marketing_score":              (float,  0.0,    1.0,     0.0),
@@ -120,15 +82,15 @@ def validate_form_data(
 
     Parameters
     ----------
-    raw_data : dict  — raw string values from request.form or JSON body
-    strict   : bool  — if True, raise errors on unknown fields;
+    raw_data: dict  — raw string values from request.form or JSON body
+    strict: bool  — if True, raise errors on unknown fields;
                        if False (default), silently pass them through
 
     Returns
     -------
     (cleaned_data, errors)
-        cleaned_data : dict  — coerced values + defaults for missing fields
-        errors       : list  — human-readable error strings (empty = ok)
+        cleaned_data: dict  — coerced values + defaults for missing fields
+        errors: list  — human-readable error strings (empty = ok)
     """
     cleaned = {}
     errors  = []

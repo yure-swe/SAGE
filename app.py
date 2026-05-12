@@ -1,30 +1,3 @@
-# =============================================================================
-# app.py — Main Flask Application  (v2)
-# =============================================================================
-# Thesis: Ensemble Learning for Predicting Game Success (Pre-Launch Focus)
-#
-# Changes from v1:
-#   FORM_SECTIONS:
-#     - Removed: has_trailer, trailer_count (all-zero data, removed from model)
-#     - Removed: has_trading_cards, has_workshop (post-success indicators)
-#     - Removed: dlc_count (post-success indicator)
-#     - Removed: is_solo_dev, has_publisher, publisher_count, developer_count
-#               (budget proxies, removed from model)
-#     - Removed: has_multiplayer_tag (redundant with tag binary features)
-#     - Removed: Indie genre flag (not a genre; captured by tag encoding)
-#     - Added:   release_date date-picker → computes game_age_days
-#     - Added:   language checklist → computes weighted_language_score
-#     - Added:   top-tag checkboxes (read dynamically from feature_dict)
-#     - "🏢 Developer / Publisher" section removed entirely
-#
-#   compute_derived_features:
-#     - Delegates to predictor.compute_derived_features() — single source of truth
-#     - Also handles game_age_days computation from release_date field
-#     - Also handles weighted_language_score from selected_languages checklist
-#
-#   Routes:
-#     - Result template now receives game_age_context and output_label from predict()
-#
 # Routes:
 #   GET/POST /           → main dashboard (form + results)
 #   GET      /model-info → model evaluation metrics
@@ -32,7 +5,6 @@
 #   GET      /about      → methodology & thesis info
 #   POST     /api/predict→ JSON endpoint
 #   GET      /health     → server health check
-# =============================================================================
 
 import logging
 import hashlib, os
@@ -85,14 +57,10 @@ _handler.setFormatter(logging.Formatter(
 app.logger.addHandler(_handler)
 app.logger.setLevel(logging.INFO)
 
-# =============================================================================
 # LANGUAGE LIST — ordered by weight (most impactful first) for the checklist
-# =============================================================================
 LANGUAGE_LIST = sorted(LANGUAGE_WEIGHTS.items(), key=lambda x: x[1], reverse=True)
 
-# =============================================================================
 # TAG FEATURES LIST — from feature_dict, used to build tag checkbox section
-# =============================================================================
 # Convert tag column names back to display names for the UI.
 # e.g. "tag_action_roguelike" → "Action Roguelike"
 def col_to_tag_display(col_name: str) -> str:
@@ -101,9 +69,7 @@ def col_to_tag_display(col_name: str) -> str:
 
 TAG_DISPLAY = [(col, col_to_tag_display(col)) for col in TAG_FEATURES]
 
-# =============================================================================
-# FORM_SECTIONS (v2)
-# =============================================================================
+# FORM_SECTIONS
 FORM_SECTIONS = [
     {
         "title": "💰 Pricing",
@@ -148,8 +114,7 @@ FORM_SECTIONS = [
         ]
     },
     {
-        # Language checklist — computes weighted_language_score server-side.
-        # Replaces the old raw "supported_languages_count" number input.
+
         "title": "🌍 Languages",
         "fields": [
             {
@@ -282,9 +247,7 @@ DATASET_INFO = {
 }
 
 
-# =============================================================================
 # FORM PREPROCESSING
-# =============================================================================
 def preprocess_form(raw_form: dict) -> dict:
     """
     1. Default unchecked toggles to 0.
@@ -324,9 +287,7 @@ def preprocess_form(raw_form: dict) -> dict:
     return d
 
 
-# =============================================================================
 # ERROR HANDLERS
-# =============================================================================
 def _wants_json() -> bool:
     return (
         request.path.startswith("/api/")
@@ -367,9 +328,7 @@ def _server_error(e):
     return ("Internal server error.", 500)
 
 
-# =============================================================================
 # ROUTES
-# =============================================================================
 
 @app.route("/dataset")
 def dataset():
@@ -536,10 +495,3 @@ def health():
         "classes":          N_CLASSES,
         "validated_fields": len(FIELD_SPECS),
     }), 200
-
-
-# =============================================================================
-# ENTRY POINT (local dev only — Gunicorn uses wsgi.py on Hostinger)
-# =============================================================================
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
