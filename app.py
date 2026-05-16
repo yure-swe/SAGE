@@ -63,7 +63,18 @@ LANGUAGE_LIST = sorted(LANGUAGE_WEIGHTS.items(), key=lambda x: x[1], reverse=Tru
 # TAG FEATURES LIST — from feature_dict, used to build tag checkbox section
 # Convert tag column names back to display names for the UI.
 # e.g. "tag_action_roguelike" → "Action Roguelike"
+_TAG_DISPLAY_OVERRIDES: dict[str, str] = {
+    "tag_actionadventure":      "Action-Adventure",
+    "tag_firstperson":          "First-Person",
+    "tag_third_person":         "Third-Person",
+    "tag_topdown":              "Top-Down",
+    "tag_rpg":                  "RPG",
+    "tag_scifi":                "Sci-Fi"
+}
+
 def col_to_tag_display(col_name: str) -> str:
+    if col_name in _TAG_DISPLAY_OVERRIDES:
+        return _TAG_DISPLAY_OVERRIDES[col_name]
     name = col_name.removeprefix("tag_").replace("_", " ").title()
     return name
 
@@ -495,3 +506,6 @@ def health():
         "classes":          N_CLASSES,
         "validated_fields": len(FIELD_SPECS),
     }), 200
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=False)

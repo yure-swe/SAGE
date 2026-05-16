@@ -52,7 +52,6 @@ df = pd.read_csv(INPUT_CSV)
 print(f"Loaded: {df.shape[0]:,} rows x {df.shape[1]} columns")
 
 # CSV stores prices in cents (e.g. 999 = $9.99); convert to USD.
-# predictor.py converts form input (USD) back to cents before building the
 for _col in ("price", "initialprice"):
     if _col in df.columns:
         df[_col] = df[_col] / 100.0
