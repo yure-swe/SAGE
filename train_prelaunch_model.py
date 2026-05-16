@@ -410,7 +410,6 @@ feature_dict = {
     "tag_features":     TAG_FEATURES,
     "class_labels":     CLASS_LABELS,
     "n_classes":        N_CLASSES,
-    "game_age_days_included": "game_age_days" in ALL_FEATURES,
     "output_label_note": (
         "Predicted lifetime owner tier — estimated total owners your game is "
         "likely to accumulate over its commercial lifespan on Steam."

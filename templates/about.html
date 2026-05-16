@@ -63,18 +63,18 @@
         <p>From raw Steam data, pre-launch features were extracted and engineered, including tag binary columns dynamically read from the dataset:</p>
         <ul>
             
-<li><strong>Raw (33):</strong> 
+<li><strong>Raw (32):</strong> 
 <code>price</code>, <code>initialprice</code>, <code>is_free</code>, <code>required_age</code>, 
 <code>has_website</code>, <code>has_support_email</code>, 
 <code>platform_windows</code>, <code>platform_mac</code>, <code>platform_linux</code>, 
-<code>screenshot_count</code>, <code>about_length</code>, <code>short_desc_length</code>, <code>has_detailed_desc</code>, 
+<code>screenshot_count</code>, <code>about_length</code>, <code>short_desc_length</code>, 
 <code>supported_languages_count</code>, <code>full_audio_languages_count</code>, 
 <code>has_achievements</code>, <code>achievement_count</code>, 
 <code>has_cloud_save</code>, <code>has_controller_support</code>, <code>has_vr_support</code>, 
 <code>has_in_app_purchases</code>, <code>has_family_sharing</code>, 
 <code>category_count</code>, <code>tag_count</code>, <code>package_count</code>, <code>sku_count</code>, 
-<code>genre_action</code>, <code>genre_adventure</code>, <code>genre_rpg</code>, 
-<code>genre_strategy</code>, <code>genre_simulation</code>, <code>genre_sports</code>, <code>genre_racing</code>
+<code>Action</code>, <code>Adventure</code>, <code>RPG</code>, 
+<code>Strategy</code>, <code>Simulation</code>, <code>Sports</code>, <code>Racing</code>
 </li>
 
             <li><strong>Engineered Scalar [Numeric] (5):</strong> 
@@ -86,8 +86,8 @@
  <!-- ... up to top-50 tags -->
 </li>
 
-<li><strong>Composite Scores [0–1] (4):</strong> 
-<code>store_page_score</code>, <code>marketing_score</code>, <code>steam_integration</code>, <code>localization_score</code>
+<li><strong>Composite Scores [0–1] (5):</strong> 
+  <code>store_page_score</code>, <code>marketing_score</code>, <code>steam_integration</code>, <code>localization_score</code>, and <code>platform_reach</code>
 </li>
         <h3>Headline results</h3>
         <div class="metrics-grid" style="margin-top:8px">

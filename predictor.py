@@ -135,9 +135,12 @@ def compute_derived_features(form_data: dict) -> dict:
         form_data["release_is_holiday"] = 0
         form_data["release_is_summer"]  = 0
         form_data["release_is_tuesday"] = 0
-    # ── Price: form submits USD (e.g. 9.99); model was trained on cents (999) ─
-    d["price"]        = round(f("price")        * 100)
-    d["initialprice"] = round(f("initialprice") * 100)
+
+    # short desc length 
+    d["short_desc_length"] = int(d.get("short_desc_length") or 211)
+    # ── Price: form submits USD (e.g. 9.99); csv has usd cents, but the training script already trains the model with USD (via * / 100)
+    d["price"]        = round(f("price"))
+    d["initialprice"] = round(f("initialprice"))
 
     # ── Platform count ────────────────────────────────────────────────────────
     platform_count = f("platform_windows") + f("platform_mac") + f("platform_linux")
@@ -171,7 +174,8 @@ def compute_derived_features(form_data: dict) -> dict:
         f("has_vr_support") +
         f("has_in_app_purchases") +
         f("has_family_sharing") +
-        f("is_multiplayer")
+        2 +  # baseline: Single-player + Stats (present in nearly all games)
+        (8 if f("is_multiplayer") == 1 else 0) 
     )
 
     # ── store_page_score 
